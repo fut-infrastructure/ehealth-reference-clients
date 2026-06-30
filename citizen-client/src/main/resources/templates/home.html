@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>My week</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="card" th:if="${#authentication == null or #authentication.principal == 'anonymousUser'}">
+        <h1>Log in</h1>
+        <p class="text-muted">You must log in with NemLogin to use this client.</p>
+        <a th:href="@{/oauth2/authorization/citizen}" class="btn btn-primary">Log in with NemLogin</a>
+    </div>
+
+    <div th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}">
+        <header class="week-header">
+            <h1 class="week-title">My week</h1>
+            <p class="week-range text-muted">
+                <span th:text="${#temporals.format(week.weekStart(), 'd MMM yyyy')}">1 Jan 2026</span>
+                –
+                <span th:text="${#temporals.format(week.weekStart().plusDays(6), 'd MMM yyyy')}">7 Jan 2026</span>
+            </p>
+            <nav class="week-nav">
+                <a class="btn btn-secondary"
+                   th:href="@{/(week=${week.previousWeek()})}">Previous week</a>
+                <a class="btn btn-secondary" th:href="@{/}">This week</a>
+                <a class="btn btn-secondary"
+                   th:href="@{/(week=${week.nextWeek()})}">Next week</a>
+            </nav>
+        </header>
+
+        <section class="week-unscheduled" th:if="${!week.unscheduled().isEmpty()}">
+            <h2 class="week-unscheduled-title">Without time</h2>
+            <ul class="activity-list">
+                <li class="activity-item" th:each="activity : ${week.unscheduled()}">
+                    <a class="activity-title" th:if="${activity.carePlanId() != null}"
+                       th:href="@{/care-plans/{id}(id=${activity.carePlanId()})}"
+                       th:text="${activity.title()}">Title</a>
+                    <span class="activity-title" th:if="${activity.carePlanId() == null}"
+                          th:text="${activity.title()}">Title</span>
+                    <span class="activity-progress text-sm text-muted"
+                          th:if="${activity.progress() != null}"
+                          th:text="${activity.progress()}">0/1</span>
+                </li>
+            </ul>
+        </section>
+
+        <section class="week-grid">
+            <th:block th:each="day : ${week.days()}">
+                <div th:replace="~{fragments/activity-group :: day(day=${day}, today=${today})}"></div>
+            </th:block>
+        </section>
+    </div>
+</div>
+</body>
+</html>

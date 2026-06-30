@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Care plan</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <h2>Care plan</h2>
+
+    <dl class="care-plan-meta">
+        <div class="data-row">
+            <dt>ID</dt>
+            <dd th:text="${carePlan.id()}">-</dd>
+        </div>
+        <div class="data-row">
+            <dt>Status</dt>
+            <dd>
+                <span class="care-plan-status"
+                      th:classappend="${'care-plan-status-' + carePlan.status()}"
+                      th:text="${carePlan.status()}">draft</span>
+            </dd>
+        </div>
+        <div class="data-row" th:if="${carePlan.title()}">
+            <dt>Title</dt>
+            <dd th:text="${carePlan.title()}">-</dd>
+        </div>
+        <div class="data-row" th:if="${carePlan.description()}">
+            <dt>Description</dt>
+            <dd th:text="${carePlan.description()}">-</dd>
+        </div>
+        <div class="data-row" th:if="${carePlan.start()}">
+            <dt>Start</dt>
+            <dd th:text="${carePlan.start()}">-</dd>
+        </div>
+        <div class="data-row" th:if="${carePlan.end()}">
+            <dt>End</dt>
+            <dd th:text="${carePlan.end()}">-</dd>
+        </div>
+    </dl>
+
+    <section class="care-plan-actions">
+        <form th:if="${carePlan.canActivate()}"
+              th:action="@{/episodes/{eoc}/care-plans/{id}/activate(eoc=${episodeOfCareId},id=${carePlan.id()})}"
+              method="post">
+            <button type="submit" class="btn btn-primary">Activate</button>
+        </form>
+
+        <form th:if="${!carePlan.allowedTransitions().isEmpty()}"
+              th:action="@{/episodes/{eoc}/care-plans/{id}/status(eoc=${episodeOfCareId},id=${carePlan.id()})}"
+              method="post">
+            <label for="target">Change status</label>
+            <select id="target" name="target" required>
+                <option th:each="t : ${carePlan.allowedTransitions()}"
+                        th:value="${t}" th:text="${t}">on-hold
+                </option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Apply</button>
+        </form>
+    </section>
+
+    <section class="care-plan-activities">
+        <h3>Activities</h3>
+
+        <th:block th:if="${!carePlan.tasks().isEmpty()}">
+            <h4>Tasks</h4>
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Status</th>
+                    <th>Label</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="t : ${carePlan.tasks()}">
+                    <td th:text="${t.id()}">-</td>
+                    <td>
+                        <span class="activity-status"
+                              th:classappend="${t.status() != null ? 'activity-status-' + t.status() : ''}"
+                              th:text="${t.status() ?: '-'}">-</span>
+                    </td>
+                    <td th:text="${t.label() ?: '-'}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </th:block>
+
+        <th:block th:if="${!carePlan.appointments().isEmpty()}">
+            <h4>Appointments</h4>
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Status</th>
+                    <th>Label</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="a : ${carePlan.appointments()}">
+                    <td th:text="${a.id()}">-</td>
+                    <td>
+                        <span class="activity-status"
+                              th:classappend="${a.status() != null ? 'activity-status-' + a.status() : ''}"
+                              th:text="${a.status() ?: '-'}">-</span>
+                    </td>
+                    <td th:text="${a.label() ?: '-'}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </th:block>
+
+        <th:block th:if="${!carePlan.serviceRequests().isEmpty()}">
+            <h4>Service requests</h4>
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Status</th>
+                    <th>Label</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${carePlan.serviceRequests()}">
+                    <td th:text="${s.id()}">-</td>
+                    <td>
+                        <span class="activity-status"
+                              th:classappend="${s.status() != null ? 'activity-status-' + s.status() : ''}"
+                              th:text="${s.status() ?: '-'}">-</span>
+                    </td>
+                    <td th:text="${s.label() ?: '-'}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </th:block>
+
+        <p th:if="${carePlan.tasks().isEmpty() and carePlan.appointments().isEmpty() and carePlan.serviceRequests().isEmpty()}">
+            No activities.
+        </p>
+    </section>
+
+    <p th:if="${episodeOfCareId}">
+        <a th:href="@{/episodes/{id}(id=${episodeOfCareId})}">Back to episode</a>
+    </p>
+    <p><a th:href="@{/}">Back to home</a></p>
+</main>
+</body>
+</html>

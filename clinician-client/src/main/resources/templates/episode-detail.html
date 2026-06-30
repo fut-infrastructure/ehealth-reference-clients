@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Episode detail</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <p><a th:href="@{/episodes}">&larr; Back to episodes</a></p>
+
+    <h1>
+        <span th:text="${episode.patientName() != null ? episode.patientName() : episode.patientId()}">Patient</span>
+        <span class="chip episode-detail-status" th:text="${episode.status()}">status</span>
+    </h1>
+
+    <div class="card episode-detail-card">
+        <h2>Patient</h2>
+        <dl>
+            <div class="data-row">
+                <dt>Name</dt>
+                <dd th:text="${episode.patientName() != null ? episode.patientName() : '-'}">-</dd>
+            </div>
+            <div class="data-row" th:if="${episode.patientCpr() != null}">
+                <dt>CPR</dt>
+                <dd th:text="${episode.patientCpr()}">-</dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="card episode-detail-card">
+        <h2>Episode</h2>
+        <dl>
+            <div class="data-row">
+                <dt>Status</dt>
+                <dd th:text="${episode.status()}">-</dd>
+            </div>
+            <div class="data-row">
+                <dt>Start</dt>
+                <dd th:text="${episode.startDate() != null ? episode.startDate() : '-'}">-</dd>
+            </div>
+            <div class="data-row">
+                <dt>End</dt>
+                <dd th:text="${episode.endDate() != null ? episode.endDate() : '-'}">-</dd>
+            </div>
+            <div class="data-row">
+                <dt>Managing organization</dt>
+                <dd th:text="${episode.managingOrganizationName() != null ? episode.managingOrganizationName() : '-'}">-</dd>
+            </div>
+            <div class="data-row">
+                <dt>Care team</dt>
+                <dd th:text="${episode.careTeamName() != null ? episode.careTeamName() : '-'}">-</dd>
+            </div>
+        </dl>
+
+        <form th:action="@{|/episodes/${episode.id()}/status|}" method="post" class="episode-status-form">
+            <label for="episode-status-target">Change status</label>
+            <select id="episode-status-target" name="target">
+                <option th:each="code : ${ {'planned','waitlist','active','onhold','finished','cancelled'} }"
+                        th:if="${code != episode.status()}"
+                        th:value="${code}"
+                        th:text="${code}">code</option>
+            </select>
+            <button type="submit" class="btn btn-secondary">Apply</button>
+        </form>
+    </div>
+
+    <p class="episode-detail-actions">
+        <a th:if="${episode.patientId() != null}"
+           th:href="@{/episodes/new(patient=${episode.patientId()})}" class="btn btn-secondary">+ New episode for this patient</a>
+    </p>
+
+    <div class="card episode-detail-card">
+        <div class="data-row">
+            <h2>Care plans</h2>
+            <a th:href="@{/episodes/{id}/care-plans/new(id=${episode.id()})}"
+               class="btn btn-secondary">+ New care plan</a>
+        </div>
+        <p th:if="${carePlans == null or carePlans.isEmpty()}" class="text-muted">
+            No care plans yet.
+        </p>
+        <ul class="episode-detail-careplans" th:unless="${carePlans == null or carePlans.isEmpty()}">
+            <li th:each="plan : ${carePlans}">
+                <a th:href="@{/episodes/{eoc}/care-plans/{id}(eoc=${episode.id()},id=${plan.id()})}"
+                   th:text="${plan.title()}">Care plan</a>
+                <span class="chip" th:text="${plan.status()}">status</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card episode-detail-card">
+        <h2>Diagnoses</h2>
+        <p th:if="${episode.diagnoses().isEmpty()}" class="text-muted">No diagnoses recorded.</p>
+        <ul class="episode-detail-diagnoses" th:unless="${episode.diagnoses().isEmpty()}">
+            <li th:each="diagnosis : ${episode.diagnoses()}" class="episode-detail-diagnosis-item">
+                <span class="episode-detail-diagnosis-label"
+                      th:text="${diagnosis.display() != null ? diagnosis.display() : (diagnosis.code() != null ? diagnosis.code() : 'Unknown')}">Diagnosis</span>
+                <span class="text-muted text-sm" th:if="${diagnosis.code() != null and diagnosis.display() != null}"
+                      th:text="'(' + ${diagnosis.code()} + ')'">(code)</span>
+                <span class="text-muted text-sm" th:if="${diagnosis.rank() != null}"
+                      th:text="'rank ' + ${diagnosis.rank()}">rank 1</span>
+            </li>
+        </ul>
+    </div>
+</div>
+</body>
+</html>

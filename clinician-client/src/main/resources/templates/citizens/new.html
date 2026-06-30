@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Create citizen</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <div class="card">
+        <div class="page-header">
+            <h1>Create citizen</h1>
+            <p class="lede">Enter the citizen's CPR number to create or update the citizen from the CPR registry.</p>
+        </div>
+
+        <div th:if="${error}" class="alert alert-error" th:text="${error}"></div>
+
+        <form th:action="@{/citizens}" method="post">
+            <div class="form-field">
+                <label for="cpr">CPR number</label>
+                <input id="cpr" name="cpr" type="text" required pattern="\d{10}"
+                       placeholder="0000000000" autocomplete="off">
+            </div>
+            <button type="submit" class="btn btn-primary">Create citizen</button>
+        </form>
+    </div>
+
+    <p><a th:href="@{/}">Back to home</a></p>
+</main>
+</body>
+</html>

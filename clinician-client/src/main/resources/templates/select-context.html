@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Select CareTeam</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <div class="card">
+        <div class="page-header">
+            <h1>Select CareTeam</h1>
+            <p class="lede">Select the CareTeam you want to work in.</p>
+        </div>
+        <form th:action="@{/select-context}" method="post">
+            <ul class="option-list">
+                <li th:each="ct, it : ${careTeams}">
+                    <label>
+                        <input type="radio" name="careTeamId" th:value="${ct.id()}"
+                               th:checked="${it.first}" required>
+                        <span th:text="${ct.name()}">CareTeam name</span>
+                        <small th:if="${ct.affiliation() != null}"
+                               th:text="' - ' + ${ct.affiliation().name()}"></small>
+                    </label>
+                </li>
+            </ul>
+            <button type="submit" class="btn btn-primary">Continue</button>
+        </form>
+    </div>
+</main>
+</body>
+</html>

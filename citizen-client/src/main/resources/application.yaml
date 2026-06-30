@@ -1,0 +1,39 @@
+spring:
+  application:
+    name: citizen-client
+  thymeleaf:
+    cache: false
+  security:
+    oauth2:
+      client:
+        registration:
+          citizen:
+            provider: citizen
+            client-id: ${EHEALTH_CITIZEN_CLIENT_ID:}
+            authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          citizen:
+            issuer-uri: ${EHEALTH_CITIZEN_ISSUER_URI:}
+
+server:
+  port: 8090
+  forward-headers-strategy: framework
+
+ehealth:
+  issuer-uri: ${EHEALTH_CITIZEN_ISSUER_URI:}
+  client-registration-id: citizen
+
+fhir:
+  server:
+    patient: ${FHIR_SERVER_PATIENT:}
+    care-plan: ${FHIR_SERVER_CARE_PLAN:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

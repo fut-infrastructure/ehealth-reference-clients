@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <title layout:title-pattern="$CONTENT_TITLE - Citizen">Citizen</title>
+    <link rel="stylesheet" th:href="@{/css/calm.css}">
+</head>
+<body>
+<header class="site-header">
+    <div class="site-header-inner">
+        <a th:href="@{/}" class="site-title">FUT Citizen</a>
+        <nav class="site-nav">
+            <span class="text-muted text-sm">reference client</span>
+            <a th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}"
+               th:href="@{/me}" class="text-sm">My profile</a>
+            <span th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}"
+                  class="text-sm" th:text="${#authentication.name}">user</span>
+            <form th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}"
+                  th:action="@{/logout}" method="post" style="margin:0">
+                <button type="submit" class="btn btn-secondary">Log out</button>
+            </form>
+        </nav>
+    </div>
+</header>
+<main>
+    <div class="container" layout:fragment="content">
+        <!-- page content -->
+    </div>
+</main>
+</body>
+</html>

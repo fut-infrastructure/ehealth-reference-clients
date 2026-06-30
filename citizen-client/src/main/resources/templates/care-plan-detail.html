@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>My plan</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <div class="card">
+        <div class="page-header">
+            <h1 th:text="${carePlan.title()}">My plan</h1>
+            <p class="lede" th:if="${carePlan.description()}" th:text="${carePlan.description()}">Description.</p>
+        </div>
+
+        <dl>
+            <div class="data-row">
+                <dt>Status</dt>
+                <dd>
+                    <span class="care-plan-status"
+                          th:classappend="${carePlan.status() != null ? 'care-plan-status-' + carePlan.status() : ''}"
+                          th:text="${carePlan.status() ?: '-'}">active</span>
+                </dd>
+            </div>
+            <div class="data-row" th:if="${carePlan.start()}">
+                <dt>Start date</dt>
+                <dd th:text="${#temporals.format(carePlan.start(), 'd MMM yyyy')}">-</dd>
+            </div>
+            <div class="data-row" th:if="${carePlan.end()}">
+                <dt>End date</dt>
+                <dd th:text="${#temporals.format(carePlan.end(), 'd MMM yyyy')}">-</dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="card">
+        <h2>Activities</h2>
+        <p class="text-muted" th:if="${carePlan.activities().isEmpty()}">
+            No activities on this plan.
+        </p>
+        <table th:if="${!carePlan.activities().isEmpty()}">
+            <thead>
+            <tr>
+                <th>Activity</th>
+                <th>Time</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="a : ${carePlan.activities()}">
+                <td th:text="${a.label() ?: a.type()}">Activity</td>
+                <td th:text="${a.when() != null
+                        ? #temporals.format(a.when(), 'd MMM yyyy HH:mm')
+                        : 'Without time'}">-</td>
+                <td>
+                    <span class="activity-status"
+                          th:classappend="${a.status() != null ? 'activity-status-' + a.status() : ''}"
+                          th:text="${a.status() ?: '-'}">-</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <p><a th:href="@{/}">&larr; Back to my week</a></p>
+</main>
+</body>
+</html>

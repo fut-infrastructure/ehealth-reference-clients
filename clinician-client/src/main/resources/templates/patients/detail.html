@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Patient</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <p><a th:href="@{/}">&larr; Back to patients</a></p>
+
+    <div class="card">
+        <div class="page-header">
+            <h1 th:text="${patient.patientName() != null ? patient.patientName() : patient.patientId()}">Patient</h1>
+        </div>
+        <dl>
+            <div class="data-row" th:if="${patient.patientCpr() != null}">
+                <dt>CPR number</dt>
+                <dd th:text="${patient.patientCpr()}">-</dd>
+            </div>
+            <div class="data-row" th:if="${patient.birthDate() != null}">
+                <dt>Date of birth</dt>
+                <dd th:text="${patient.birthDate()}">-</dd>
+            </div>
+            <div class="data-row" th:if="${patient.gender() != null}">
+                <dt>Gender</dt>
+                <dd th:text="${patient.gender()}">-</dd>
+            </div>
+            <div class="data-row" th:if="${patient.address() != null}">
+                <dt>Address</dt>
+                <dd th:text="${patient.address()}">-</dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="card">
+        <div class="page-header">
+            <h2>Episodes of care</h2>
+            <a th:href="@{/episodes/new(patient=${patient.patientId()})}" class="btn btn-primary">+ New episode</a>
+        </div>
+
+        <p th:if="${patient.episodes().isEmpty()}" class="text-muted">
+            No episodes yet. Create one to start an episode of care for this citizen. Plans are then added from the episode.
+        </p>
+
+        <ul class="episodes-summary-list" th:unless="${patient.episodes().isEmpty()}">
+            <li th:each="episode : ${patient.episodes()}" class="episodes-summary-item">
+                <a th:href="@{|/episodes/${episode.id()}|}" class="episodes-summary-link">
+                    <span class="episodes-summary-diagnosis"
+                          th:text="${episode.diagnosisLabel() != null ? episode.diagnosisLabel() : 'Untitled episode'}">Diagnosis</span>
+                    <span class="chip episodes-summary-status" th:text="${episode.status()}">status</span>
+                    <span class="text-muted text-sm episodes-summary-date"
+                          th:if="${episode.startDate() != null}" th:text="${episode.startDate()}">2026-01-01</span>
+                </a>
+            </li>
+        </ul>
+
+        <nav class="pager" th:if="${episodesPrevPage != null or episodesNextPage != null}">
+            <a th:if="${episodesPrevPage != null}"
+               th:href="@{/patients/{id}(id=${patient.patientId()},page=${episodesPrevPage})}"
+               class="btn btn-secondary">&larr; Previous</a>
+            <a th:if="${episodesNextPage != null}"
+               th:href="@{/patients/{id}(id=${patient.patientId()},page=${episodesNextPage})}"
+               class="btn btn-secondary">Next &rarr;</a>
+        </nav>
+    </div>
+</div>
+</body>
+</html>

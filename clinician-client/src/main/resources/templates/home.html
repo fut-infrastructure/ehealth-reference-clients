@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Welcome</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="card" th:if="${#authentication == null or #authentication.principal == 'anonymousUser'}">
+        <h1>Log in</h1>
+        <p class="text-muted">You must log in to use this client.</p>
+        <a th:href="@{/oauth2/authorization/clinician}" class="btn btn-primary">Log in with Keycloak</a>
+    </div>
+    <div class="card" th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}">
+        <h1>Welcome</h1>
+        <dl>
+            <div class="data-row">
+                <dt>User</dt>
+                <dd th:text="${#authentication.name}">user</dd>
+            </div>
+            <div class="data-row" th:if="${session['selected-context'] != null}">
+                <dt>CareTeam</dt>
+                <dd th:text="${session['selected-context'].name()}">team</dd>
+            </div>
+        </dl>
+        <p th:if="${session['selected-context'] == null}">
+            <a th:href="@{/select-context}" class="btn btn-primary">Select CareTeam</a>
+        </p>
+    </div>
+
+    <div class="card" th:if="${patients != null}">
+        <div class="page-header">
+            <h2>Patients with recent care plans</h2>
+            <a th:href="@{/citizens/new}" class="btn btn-primary">Register citizen</a>
+        </div>
+        <p class="text-muted">
+            Citizens on this care team with a care plan created or updated in the last
+            <span th:text="${rosterWindowDays}">30</span> days. Older patients are not listed here;
+            register or open a citizen directly to reach them.
+        </p>
+
+        <p th:if="${patients.isEmpty()}" class="text-muted">
+            No care plans updated in the last <span th:text="${rosterWindowDays}">30</span> days on
+            this care team. Register a citizen and create their first episode and plan to begin.
+        </p>
+
+        <div th:unless="${patients.isEmpty()}">
+            <input type="search" id="patient-filter" class="patient-filter"
+                   placeholder="Filter the list below by name or CPR…" autocomplete="off"
+                   oninput="filterPatients(this.value)">
+            <p class="text-muted text-sm">
+                Filters only the rows below (last <span th:text="${rosterWindowDays}">30</span> days);
+                it does not search the whole care team.
+            </p>
+            <table class="patient-table">
+                <thead>
+                <tr><th>Name</th><th>CPR</th><th>Care plans (<span th:text="${rosterWindowDays}">30</span>d)</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="patient : ${patients}" class="patient-row"
+                    th:attr="data-search=${(patient.patientName() != null ? patient.patientName() : '') + ' ' + (patient.patientCpr() != null ? patient.patientCpr() : '')}"
+                    th:onclick="|window.location.href='@{/patients/{id}(id=${patient.patientId()})}'|">
+                    <td th:text="${patient.patientName() != null ? patient.patientName() : patient.patientId()}">Name</td>
+                    <td th:text="${patient.patientCpr() != null ? patient.patientCpr() : '-'}">CPR</td>
+                    <td th:text="${patient.planCount()}">0</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            function filterPatients(term) {
+                var q = term.trim().toLowerCase();
+                document.querySelectorAll('.patient-row').forEach(function (row) {
+                    var hay = (row.getAttribute('data-search') || '').toLowerCase();
+                    row.style.display = hay.indexOf(q) === -1 ? 'none' : '';
+                });
+            }
+        </script>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Episodes of care</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h1>Episodes of care</h1>
+    <p class="text-muted">Planned and active episodes for the selected care team.</p>
+
+    <div th:if="${patients.isEmpty()}" class="card">
+        <p>No planned or active episodes for this care team.</p>
+    </div>
+
+    <div th:each="patient : ${patients}" class="card episodes-patient-card">
+        <header class="episodes-patient-header">
+            <h2 class="episodes-patient-name" th:text="${patient.patientName() != null ? patient.patientName() : patient.patientId()}">Patient name</h2>
+            <span class="text-muted text-sm episodes-patient-cpr" th:if="${patient.patientCpr() != null}" th:text="${patient.patientCpr()}">0000000000</span>
+        </header>
+
+        <ul class="episodes-summary-list">
+            <li th:each="episode : ${patient.episodes()}" class="episodes-summary-item">
+                <a th:href="@{|/episodes/${episode.id()}|}" class="episodes-summary-link">
+                    <span class="episodes-summary-diagnosis"
+                          th:text="${episode.diagnosisLabel() != null ? episode.diagnosisLabel() : 'Untitled episode'}">Diagnosis</span>
+                    <span class="chip episodes-summary-status" th:text="${episode.status()}">status</span>
+                    <span class="text-muted text-sm episodes-summary-date" th:if="${episode.startDate() != null}" th:text="${episode.startDate()}">2026-01-01</span>
+                </a>
+            </li>
+        </ul>
+
+        <p class="episodes-new-link">
+            <a th:href="@{/episodes/new(patient=${patient.patientId()})}" class="btn btn-secondary">+ New episode</a>
+        </p>
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,34 @@
+# Defaults target devenvcgi. Override any value via shell env vars or a
+# project-local .env file. See .env.example.
+
+name: ehealth-reference-clients
+
+services:
+  clinician-client:
+    build:
+      context: ..
+      dockerfile: clinician-client/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      EHEALTH_ISSUER_URI: ${EHEALTH_ISSUER_URI:-https://saml.devenvcgi.ehealth.sundhed.dk/auth/realms/ehealth}
+      EHEALTH_CLIENT_ID: ${EHEALTH_CLIENT_ID:-ehealth-reference-clinician-client}
+      EHEALTH_CLIENT_SECRET: ${EHEALTH_CLIENT_SECRET:-Test1234}
+      FHIR_SERVER_PATIENT: ${FHIR_SERVER_PATIENT:-https://patient.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_CARE_PLAN: ${FHIR_SERVER_CARE_PLAN:-https://careplan.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_PLAN: ${FHIR_SERVER_PLAN:-https://plan.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_ORGANIZATION: ${FHIR_SERVER_ORGANIZATION:-https://organization.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_TERMINOLOGY: ${FHIR_SERVER_TERMINOLOGY:-https://terminology.devenvcgi.ehealth.sundhed.dk/fhir}
+
+  citizen-client:
+    build:
+      context: ..
+      dockerfile: citizen-client/Dockerfile
+    ports:
+      - "8090:8090"
+    environment:
+      EHEALTH_CITIZEN_ISSUER_URI: ${EHEALTH_CITIZEN_ISSUER_URI:-https://saml.devenvcgi.ehealth.sundhed.dk/auth/realms/nemlogin}
+      EHEALTH_CITIZEN_CLIENT_ID: ${EHEALTH_CITIZEN_CLIENT_ID:-ehealth-reference-citizen-client}
+      SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_CITIZEN_CLIENT_AUTHENTICATION_METHOD: "none"
+      FHIR_SERVER_PATIENT: ${FHIR_SERVER_PATIENT:-https://patient.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_CARE_PLAN: ${FHIR_SERVER_CARE_PLAN:-https://careplan.devenvcgi.ehealth.sundhed.dk/fhir}

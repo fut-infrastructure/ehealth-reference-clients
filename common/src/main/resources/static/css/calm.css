@@ -1,0 +1,651 @@
+/*
+ * Calm design system - see ADR 0002. Self-hosted fonts, no CDN.
+ * Components: button, form, chip, card, data-row, layout (header, main, container).
+ */
+
+/* @font-face declarations omitted: Inter and JetBrains Mono WOFF2 files are
+ * not yet vendored. Body/code fall back through the font-family stack
+ * (system-ui, monospace). Add @font-face blocks back when /fonts/ is populated. */
+
+/* ---------------------------------------------------------------------------
+ * Custom properties
+ * --------------------------------------------------------------------------- */
+
+:root {
+    /* Colors */
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --text: #111827;
+    --text-muted: #6b7280;
+    --accent: #1e40af;
+    --accent-strong: #1e3a8a;
+    --border: rgba(0, 0, 0, 0.08);
+    --danger: #b91c1c;
+    --success: #15803d;
+
+    /* Spacing scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 24px;
+    --space-6: 48px;
+
+    /* Border radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+
+    /* Font sizes */
+    --text-sm: 0.8125rem; /* 13px */
+    --text-base: 0.9375rem; /* 15px */
+    --text-lg: 1.0625rem; /* 17px */
+    --text-xl: 1.25rem; /* 20px */
+    --text-2xl: 1.5rem; /* 24px */
+}
+
+/* ---------------------------------------------------------------------------
+ * Base
+ * --------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 100%;
+    -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: var(--text-base);
+    line-height: 1.6;
+}
+
+code,
+pre,
+kbd,
+samp {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: var(--text-sm);
+}
+
+a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1, h2, h3 {
+    margin: 0 0 var(--space-4);
+    line-height: 1.3;
+    font-weight: 700;
+}
+
+h1 {
+    font-size: var(--text-2xl);
+}
+
+h2 {
+    font-size: var(--text-xl);
+}
+
+h3 {
+    font-size: var(--text-lg);
+}
+
+p {
+    margin: 0 0 var(--space-4);
+}
+
+/* ---------------------------------------------------------------------------
+ * Layout: header
+ * --------------------------------------------------------------------------- */
+
+.site-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 var(--space-5);
+}
+
+.site-header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-5);
+    height: 56px;
+}
+
+.site-header .site-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--text);
+    text-decoration: none;
+}
+
+.site-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.nav-tab {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text);
+    text-decoration: none;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+}
+
+.nav-tab:hover {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.site-user {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+/* ---------------------------------------------------------------------------
+ * Layout: main and container
+ * --------------------------------------------------------------------------- */
+
+main {
+    padding: var(--space-6) var(--space-5);
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* ---------------------------------------------------------------------------
+ * Card
+ * --------------------------------------------------------------------------- */
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    padding: var(--space-5);
+}
+
+.card + .card {
+    margin-top: var(--space-4);
+}
+
+/* ---------------------------------------------------------------------------
+ * Data row
+ * --------------------------------------------------------------------------- */
+
+.data-row {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-4);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.data-row:last-child {
+    border-bottom: none;
+}
+
+.data-row dt {
+    flex: 0 0 160px;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.data-row dd {
+    flex: 1;
+    margin: 0;
+    font-size: var(--text-base);
+    color: var(--text);
+}
+
+/* ---------------------------------------------------------------------------
+ * Chip
+ * --------------------------------------------------------------------------- */
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-3);
+    border-radius: 100px;
+    font-size: var(--text-sm);
+    font-weight: 400;
+    line-height: 1.4;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    transition: background 150ms ease, color 150ms ease;
+    white-space: nowrap;
+    cursor: default;
+}
+
+.chip-success {
+    background: rgba(21, 128, 61, 0.08);
+    color: var(--success);
+    border-color: rgba(21, 128, 61, 0.2);
+}
+
+.chip-danger {
+    background: rgba(185, 28, 28, 0.08);
+    color: var(--danger);
+    border-color: rgba(185, 28, 28, 0.2);
+}
+
+/* ---------------------------------------------------------------------------
+ * Button
+ * --------------------------------------------------------------------------- */
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: var(--text-base);
+    font-weight: 400;
+    line-height: 1.5;
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid transparent;
+    transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+    white-space: nowrap;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+}
+
+.btn-primary:hover {
+    background: var(--accent-strong);
+    border-color: var(--accent-strong);
+    text-decoration: none;
+    color: #ffffff;
+}
+
+.btn-secondary {
+    background: var(--surface);
+    color: var(--text);
+    border-color: rgba(17, 24, 39, 0.22);
+}
+
+.btn-secondary:hover {
+    background: var(--bg);
+    border-color: rgba(0, 0, 0, 0.15);
+    text-decoration: none;
+    color: var(--text);
+}
+
+/* ---------------------------------------------------------------------------
+ * Form
+ * --------------------------------------------------------------------------- */
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: var(--space-4);
+}
+
+.form-field label {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--text);
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    font-family: inherit;
+    font-size: var(--text-base);
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid rgba(0, 0, 0, 0.18);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    line-height: 1.5;
+    width: 100%;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12);
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+    color: var(--text-muted);
+}
+
+.form-field .field-hint {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.form-field .field-error {
+    font-size: var(--text-sm);
+    color: var(--danger);
+}
+
+/* ---------------------------------------------------------------------------
+ * Option list (radio rows)
+ * --------------------------------------------------------------------------- */
+
+.option-list {
+    list-style: none;
+    margin: 0 0 var(--space-4);
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.option-list > li > label {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: border-color 150ms ease, background 150ms ease;
+}
+
+.option-list > li > label:hover {
+    border-color: rgba(0, 0, 0, 0.18);
+    background: var(--bg);
+}
+
+.option-list > li > label:focus-within {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.12);
+}
+
+.option-list input[type="radio"] {
+    margin: 0;
+    accent-color: var(--accent);
+}
+
+.option-list small {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+
+/* ---------------------------------------------------------------------------
+ * Alert (inline status)
+ * --------------------------------------------------------------------------- */
+
+.alert {
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    margin-bottom: var(--space-4);
+    font-size: var(--text-base);
+}
+
+.alert-error {
+    background: rgba(185, 28, 28, 0.06);
+    border-color: rgba(185, 28, 28, 0.2);
+    color: var(--danger);
+}
+
+.alert-success {
+    background: rgba(21, 128, 61, 0.06);
+    border-color: rgba(21, 128, 61, 0.2);
+    color: var(--success);
+}
+
+/* ---------------------------------------------------------------------------
+ * Page header (h1 + lede)
+ * --------------------------------------------------------------------------- */
+
+.page-header {
+    margin-bottom: var(--space-5);
+}
+
+.page-header h1,
+.page-header h2 {
+    margin-bottom: var(--space-2);
+}
+
+.page-header .lede {
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Button group
+ * --------------------------------------------------------------------------- */
+
+.btn-group {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    margin-top: var(--space-4);
+}
+
+.care-plan-actions {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-5);
+    flex-wrap: wrap;
+    margin: var(--space-5) 0;
+}
+
+.care-plan-actions form {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-2);
+}
+
+.care-plan-actions label {
+    margin: 0 var(--space-2) 0 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Utility
+ * --------------------------------------------------------------------------- */
+
+.text-muted {
+    color: var(--text-muted);
+}
+
+.text-sm {
+    font-size: var(--text-sm);
+}
+
+/* ---------------------------------------------------------------------------
+ * Citizen week view
+ * --------------------------------------------------------------------------- */
+
+.week-header {
+    margin-bottom: 1.5rem;
+}
+
+.week-title {
+    margin: 0 0 .25rem;
+}
+
+.week-range {
+    margin: 0 0 .75rem;
+}
+
+.week-nav {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+}
+
+.week-unscheduled {
+    margin: 1rem 0 1.5rem;
+    padding: 1rem;
+    border: 1px solid var(--border, #ddd);
+    border-radius: 6px;
+    background: var(--surface-muted, #fafafa);
+}
+
+.week-unscheduled-title {
+    margin: 0 0 .5rem;
+    font-size: 1rem;
+}
+
+.week-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: .75rem;
+}
+
+@media (max-width: 1000px) {
+    .week-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.day-card {
+    border: 1px solid var(--border, #ddd);
+    border-radius: 6px;
+    padding: .75rem;
+    background: var(--surface, #fff);
+    min-height: 8rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.day-today {
+    border-color: var(--accent, #4a7);
+    box-shadow: 0 0 0 1px var(--accent, #4a7);
+}
+
+.day-header {
+    margin-bottom: .5rem;
+}
+
+.day-date {
+    margin: 0;
+    font-size: .95rem;
+}
+
+.day-count {
+    display: block;
+}
+
+.day-empty {
+    margin: 0;
+    font-size: var(--text-sm);
+}
+
+.activity-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .35rem;
+}
+
+.activity-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: baseline;
+    gap: .5rem;
+    padding: .25rem 0;
+    border-top: 1px solid var(--border-subtle, #eee);
+}
+
+.activity-item:first-child {
+    border-top: 0;
+}
+
+.activity-time {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.activity-title {
+    overflow-wrap: anywhere;
+}
+
+a.activity-title {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+a.activity-title:hover {
+    text-decoration: underline;
+}
+
+.activity-progress {
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+ * Patient roster (home)
+ * --------------------------------------------------------------------------- */
+
+.patient-filter {
+    width: 100%;
+    margin-bottom: var(--space-4);
+}
+
+.patient-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.patient-table th,
+.patient-table td {
+    text-align: left;
+    padding: var(--space-3);
+    border-bottom: 1px solid var(--border);
+}
+
+.patient-table th {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.patient-row {
+    cursor: pointer;
+}
+
+.patient-row:hover {
+    background: var(--bg);
+}

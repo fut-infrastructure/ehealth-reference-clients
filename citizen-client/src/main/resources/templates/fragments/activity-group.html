@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!--
+  One day in the citizen weekly view.
+  Caller passes a `day` (DayView) and `today` (LocalDate).
+-->
+<section th:fragment="day(day, today)"
+         class="day-card"
+         th:classappend="${day.date() == today} ? ' day-today' : ''">
+    <header class="day-header">
+        <h3 class="day-date"
+            th:text="${#temporals.format(day.date(), 'EEEE d MMM')}">Monday 1 Jan</h3>
+        <span class="day-count text-sm text-muted"
+              th:text="${day.activities().size() + ' activities'}">0 activities</span>
+    </header>
+    <p class="day-empty text-muted" th:if="${day.activities().isEmpty()}">
+        No planned activities.
+    </p>
+    <ul class="activity-list" th:if="${!day.activities().isEmpty()}">
+        <li class="activity-item" th:each="activity : ${day.activities()}">
+            <span class="activity-time"
+                  th:text="${activity.scheduledAt() != null
+                          ? #temporals.format(activity.scheduledAt(), 'HH:mm')
+                          : '-'}">00:00</span>
+            <a class="activity-title" th:if="${activity.carePlanId() != null}"
+               th:href="@{/care-plans/{id}(id=${activity.carePlanId()})}"
+               th:text="${activity.title()}">Title</a>
+            <span class="activity-title" th:if="${activity.carePlanId() == null}"
+                  th:text="${activity.title()}">Title</span>
+            <span class="activity-progress text-sm text-muted"
+                  th:if="${activity.progress() != null}"
+                  th:text="${activity.progress()}">0/1</span>
+        </li>
+    </ul>
+</section>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>My profile</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <div class="card">
+        <div class="page-header">
+            <h1>My profile</h1>
+            <p class="lede">Your information from FUT.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Citizen</h2>
+        <dl>
+            <div class="data-row">
+                <dt>Name</dt>
+                <dd th:text="${patient.displayName()}">-</dd>
+            </div>
+            <div class="data-row">
+                <dt>CPR number</dt>
+                <dd th:text="${patient.cpr()}">-</dd>
+            </div>
+            <div class="data-row">
+                <dt>Date of birth</dt>
+                <dd th:text="${patient.birthDate() ?: '-'}">-</dd>
+            </div>
+            <div class="data-row">
+                <dt>Gender</dt>
+                <dd th:text="${patient.gender() ?: '-'}">-</dd>
+            </div>
+            <div class="data-row">
+                <dt>Address</dt>
+                <dd th:text="${patient.address() ?: '-'}">-</dd>
+            </div>
+        </dl>
+    </div>
+
+    <div class="card">
+        <h2>My active episodes of care</h2>
+        <p class="text-muted" th:if="${episodes.isEmpty()}">You have no active episodes of care.</p>
+        <ul class="option-list" th:if="${!episodes.isEmpty()}">
+            <li th:each="eoc : ${episodes}">
+                <div>
+                    <span th:text="${!eoc.type.isEmpty() and !eoc.type[0].coding.isEmpty()}
+                                   ? ${eoc.type[0].coding[0].display ?: eoc.type[0].coding[0].code}
+                                   : ${eoc.idElement.idPart}">Episode</span>
+                    <small th:if="${eoc.status != null}"
+                           th:text="' - ' + ${eoc.status.display}"></small>
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="card">
+        <h2>My care plans</h2>
+        <p class="text-muted" th:if="${carePlans.isEmpty()}">You have no care plans.</p>
+        <ul class="option-list" th:if="${!carePlans.isEmpty()}">
+            <li th:each="cp : ${carePlans}">
+                <a th:href="@{/care-plans/{id}(id=${cp.id()})}">
+                    <span th:text="${cp.title()}">Care plan</span>
+                    <small th:if="${cp.status() != null}" th:text="' - ' + ${cp.status()}"></small>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <div class="btn-group">
+        <a th:href="@{/}" class="btn btn-secondary">Back to home</a>
+    </div>
+</main>
+</body>
+</html>

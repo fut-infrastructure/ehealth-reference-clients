@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: clinician-client
+  thymeleaf:
+    cache: false
+  security:
+    oauth2:
+      client:
+        registration:
+          clinician:
+            provider: clinician
+            client-id: ${EHEALTH_CLIENT_ID:}
+            client-secret: ${EHEALTH_CLIENT_SECRET:}
+            authorization-grant-type: authorization_code
+            scope:
+              - openid
+              - profile
+              - practitioner
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          clinician:
+            issuer-uri: ${EHEALTH_ISSUER_URI:}
+
+server:
+  port: 8080
+  forward-headers-strategy: framework
+
+ehealth:
+  issuer-uri: ${EHEALTH_ISSUER_URI:}
+
+fhir:
+  server:
+    patient: ${FHIR_SERVER_PATIENT:}
+    care-plan: ${FHIR_SERVER_CARE_PLAN:}
+    plan: ${FHIR_SERVER_PLAN:}
+    organization: ${FHIR_SERVER_ORGANIZATION:}
+    terminology: ${FHIR_SERVER_TERMINOLOGY:}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

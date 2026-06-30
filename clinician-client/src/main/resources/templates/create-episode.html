@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Create episode</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <p><a th:href="@{/episodes}">&larr; Back to episodes</a></p>
+
+    <h1>Create episode of care</h1>
+    <p class="text-muted">Patient: <span th:text="${patientId}">PatientId</span></p>
+
+    <p th:if="${error}" class="field-error" th:text="${error}">error</p>
+
+    <form th:action="@{/episodes}" method="post" class="card episodes-create-form">
+        <input type="hidden" name="patient" th:value="${patientId}">
+
+        <div class="form-field">
+            <label for="conditionCode">Diagnosis</label>
+            <select id="conditionCode" name="conditionCode" required>
+                <option value="" disabled selected>- pick a diagnosis -</option>
+                <option th:each="option : ${conditionOptions}"
+                        th:value="${option.code()}"
+                        th:text="${option.display() + ' (' + option.code() + ')'}">Hypertension
+                </option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Create episode</button>
+    </form>
+</div>
+</body>
+</html>

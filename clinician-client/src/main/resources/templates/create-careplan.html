@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Create care plan</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <h2>Create care plan</h2>
+
+    <p>Pick a published plan definition to apply to this episode of care. The server will create a
+        draft care plan and its activities.</p>
+
+    <form th:action="@{/episodes/{id}/care-plans(id=${episodeOfCareId})}" method="post"
+          th:unless="${planDefinitions.isEmpty()}">
+        <label for="planDefinitionId">Plan definition</label>
+        <select id="planDefinitionId" name="planDefinitionId" required>
+            <option th:each="pd : ${planDefinitions}" th:value="${pd.id()}"
+                    th:text="${pd.version() != null ? pd.label() + ' (v' + pd.version() + ')' : pd.label()}">
+                Plan definition
+            </option>
+        </select>
+        <button type="submit" class="btn btn-primary">Create care plan</button>
+    </form>
+
+    <p th:if="${planDefinitions.isEmpty()}">No published plan definitions available.</p>
+
+    <p>
+        <a th:href="@{/episodes/{id}(id=${episodeOfCareId})}">Back to episode</a>
+    </p>
+</main>
+</body>
+</html>

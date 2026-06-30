@@ -1,0 +1,32 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5.2.0
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Build + test
+        run: ./mvnw -B verify
+        env:
+          EHEALTH_TEST_USERNAME: ${{ secrets.EHEALTH_TEST_USERNAME }}
+          EHEALTH_TEST_PASSWORD: ${{ secrets.EHEALTH_TEST_PASSWORD }}
+          EHEALTH_TEST_CLIENT_ID: ${{ secrets.EHEALTH_TEST_CLIENT_ID }}
+
+      - name: Build clinician-client image
+        run: docker build -f clinician-client/Dockerfile .
+
+      - name: Build citizen-client image
+        run: docker build -f citizen-client/Dockerfile .
