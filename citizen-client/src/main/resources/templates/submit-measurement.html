@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Submit measurement</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <p><a th:href="@{/}">&larr; Back</a></p>
+
+    <div class="card">
+        <h1 th:text="${form.codeDisplay() != null ? form.codeDisplay() : 'Submit measurement'}">Submit measurement</h1>
+
+        <form th:action="@{/measurements/new}" method="post">
+            <!-- hidden context fields -->
+            <input type="hidden" name="serviceRequestRef"        th:value="${form.serviceRequestRef()}">
+            <input type="hidden" name="serviceRequestVersionRef" th:value="${form.serviceRequestVersionRef()}">
+            <input type="hidden" name="patientRef"               th:value="${form.patientRef()}">
+            <input type="hidden" name="episodeRef"               th:value="${form.episodeRef()}">
+            <input type="hidden" name="codeSystem"               th:value="${form.codeSystem()}">
+            <input type="hidden" name="codeCode"                 th:value="${form.codeCode()}">
+            <input type="hidden" name="codeDisplay"              th:value="${form.codeDisplay()}">
+            <input type="hidden" name="timingType"               th:value="${form.timingType()}">
+            <input type="hidden" name="serviceRequestVersionId"  th:value="${form.serviceRequestVersionId()}">
+            <input type="hidden" name="slotStart"                th:value="${form.slotStart()}">
+            <input type="hidden" name="slotEnd"                  th:value="${form.slotEnd()}">
+
+            <div class="data-row">
+                <label for="obs-value">Value</label>
+                <input id="obs-value" type="number" step="any" name="value"
+                       required autofocus class="input-text" placeholder="e.g. 72.5">
+            </div>
+
+            <div class="data-row">
+                <label for="obs-unit">Unit</label>
+                <input id="obs-unit" type="text" name="unit"
+                       class="input-text" placeholder="e.g. kg, mmHg, mmol/L">
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <a th:href="@{/}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+</body>
+</html>

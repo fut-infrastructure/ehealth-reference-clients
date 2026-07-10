@@ -9,7 +9,7 @@ import jakarta.annotation.Nullable;
  * {@code /episodes/{episodeOfCareId}/care-plans/{id}}.
  */
 public record CarePlanSummaryView(
-        String id,
+        String carePlanId,
         @Nullable String status,
         String title) {
 }

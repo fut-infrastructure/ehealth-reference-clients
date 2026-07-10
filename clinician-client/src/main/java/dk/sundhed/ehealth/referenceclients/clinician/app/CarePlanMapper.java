@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Maps FHIR {@code CarePlan} (+ activities + PlanDefinition) resources to the view records
@@ -21,13 +22,21 @@ public final class CarePlanMapper {
 
     /**
      * Builds a {@link CarePlanDetailView} from the FHIR resources gathered for the detail page.
+     *
+     * <p>The caller passes the CarePlan plus its activities already partitioned by resource type
+     * (Task / Appointment / ServiceRequest); we keep that partition rather than merging into one
+     * list because the detail template renders each type in its own table. Beyond copying fields,
+     * this derives two UI affordances from the status: {@code canActivate} (the dedicated Activate
+     * button is only meaningful while the plan is a {@code draft}) and {@code allowedTransitions}
+     * (the status dropdown options, see {@link #allowedTransitions}). The EpisodeOfCare back-link
+     * is not a plain field either; it is pulled from an extension by {@link #extractEpisodeOfCareId}.
      */
     public static CarePlanDetailView toDetailView(
             CarePlan carePlan,
             List<Task> tasks,
             List<Appointment> appointments,
             List<ServiceRequest> serviceRequests) {
-        String id = carePlan.getIdElement().getIdPart();
+        String carePlanId = carePlan.getIdElement().getIdPart();
         String status = carePlan.hasStatus() ? carePlan.getStatus().toCode() : null;
         boolean canActivate = carePlan.getStatus() == CarePlan.CarePlanStatus.DRAFT;
         List<String> allowedTransitions = allowedTransitions(carePlan.getStatus());
@@ -41,6 +50,7 @@ public final class CarePlanMapper {
 
         String episodeOfCareId = extractEpisodeOfCareId(carePlan);
 
+        // Each activity type maps to its own ActivityView list; the template shows them separately.
         List<CarePlanDetailView.ActivityView> taskViews =
                 tasks.stream().map(CarePlanMapper::toTaskView).toList();
         List<CarePlanDetailView.ActivityView> appointmentViews =
@@ -49,7 +59,7 @@ public final class CarePlanMapper {
                 serviceRequests.stream().map(CarePlanMapper::toServiceRequestView).toList();
 
         return new CarePlanDetailView(
-                id,
+                carePlanId,
                 status,
                 canActivate,
                 allowedTransitions,
@@ -66,8 +76,9 @@ public final class CarePlanMapper {
     /**
      * Builds the picker options for {@code GET /episodes/{id}/care-plans/new}.
      */
-    public static List<PlanDefinitionOptionView> toOptions(List<PlanDefinition> planDefinitions) {
-        return planDefinitions.stream().map(CarePlanMapper::toOption).toList();
+    public static List<PlanDefinitionOptionView> toOptions(
+            List<PlanDefinition> planDefinitions, Map<String, ActivityDefinition> activities) {
+        return planDefinitions.stream().map(planDefinition -> toOption(planDefinition, activities)).toList();
     }
 
     /**
@@ -78,24 +89,91 @@ public final class CarePlanMapper {
     }
 
     private static CarePlanSummaryView toSummary(CarePlan carePlan) {
-        String id = carePlan.getIdElement().getIdPart();
+        String carePlanId = carePlan.getIdElement().getIdPart();
         String status = carePlan.hasStatus() ? carePlan.getStatus().toCode() : null;
-        String title = carePlan.hasTitle() ? carePlan.getTitle() : id;
-        return new CarePlanSummaryView(id, status, title);
+        String title = carePlan.hasTitle() ? carePlan.getTitle() : carePlanId;
+        return new CarePlanSummaryView(carePlanId, status, title);
     }
 
-    private static PlanDefinitionOptionView toOption(PlanDefinition pd) {
-        String id = pd.getIdElement().getIdPart();
+    /**
+     * Maps one {@link PlanDefinition} to a picker row. The label falls back {@code title -> name ->
+     * bare id} so the row always shows something clickable. {@code actionSummaries} previews what
+     * applying the plan would create, one line per action (see {@link #summariseAction}); the
+     * shared {@code activities} map lets those summaries resolve referenced ActivityDefinitions
+     * without a per-action server round-trip.
+     */
+    private static PlanDefinitionOptionView toOption(
+            PlanDefinition planDefinition, Map<String, ActivityDefinition> activities) {
+        String planDefinitionId = planDefinition.getIdElement().getIdPart();
         String label;
-        if (pd.hasTitle()) {
-            label = pd.getTitle();
-        } else if (pd.hasName()) {
-            label = pd.getName();
+        if (planDefinition.hasTitle()) {
+            label = planDefinition.getTitle();
+        } else if (planDefinition.hasName()) {
+            label = planDefinition.getName();
         } else {
-            label = id;
+            label = planDefinitionId;
         }
-        String version = pd.hasVersion() ? pd.getVersion() : null;
-        return new PlanDefinitionOptionView(id, label, version);
+        String version = planDefinition.hasVersion() ? planDefinition.getVersion() : null;
+        LocalDate lastUpdated = toLocalDate(planDefinition.getMeta().getLastUpdated());
+        List<String> actionSummaries = planDefinition.getAction().stream()
+                .map(action -> summariseAction(action, activities))
+                .toList();
+        return new PlanDefinitionOptionView(planDefinitionId, label, version, lastUpdated, actionSummaries);
+    }
+
+    /**
+     * Produces a short human-readable label for one PlanDefinition action, shown in the picker's
+     * activity preview. What an action exposes as a label depends on how the plan was authored, so
+     * we walk a fallback ladder from most to least specific and stop at the first hit:
+     *
+     * <ol>
+     *   <li>the action's own {@code title}, if set;</li>
+     *   <li>otherwise the {@link ActivityDefinition} the action instantiates, resolved from the
+     *       pre-indexed {@code activities} map: its {@code title}, else a {@code "topic (code)"}
+     *       label derived from its topic display and measurement code;</li>
+     *   <li>otherwise the bare canonical URL, so a referenced-but-unresolved definition still
+     *       renders instead of a blank row;</li>
+     *   <li>finally the action's own inline {@code code}, or the literal {@code "action"}.</li>
+     * </ol>
+     */
+    private static String summariseAction(
+            PlanDefinition.PlanDefinitionActionComponent action,
+            Map<String, ActivityDefinition> activities) {
+        // 1. An explicit action title is authoritative.
+        if (action.hasTitle()) {
+            return action.getTitle();
+        }
+        // 2. Otherwise resolve the referenced ActivityDefinition. The canonical may carry a
+        //    "|version" suffix, but the map is keyed by the versionless URL, so strip it first.
+        if (action.hasDefinition()) {
+            String canonical = action.getDefinitionCanonicalType().getValue();
+            if (canonical != null) {
+                String key = new IdType(canonical).toVersionless().getValue();
+                ActivityDefinition activityDefinition = activities.get(key);
+                if (activityDefinition != null) {
+                    if (activityDefinition.hasTitle()) return activityDefinition.getTitle();
+                    // No title: build a label from the first non-blank topic display/code...
+                    String topic = activityDefinition.getTopic().stream()
+                            .flatMap(codeableConcept -> codeableConcept.getCoding().stream())
+                            .map(coding -> coding.hasDisplay() ? coding.getDisplay() : coding.getCode())
+                            .filter(value -> value != null && !value.isBlank())
+                            .findFirst().orElse(null);
+                    // ...and the measurement code, combining them as "topic (code)" when both exist.
+                    String code = activityDefinition.hasCode() ? codeLabel(activityDefinition.getCode()) : null;
+                    if (topic != null && code != null) return topic + " (" + code + ")";
+                    if (topic != null) return topic;
+                    if (code != null) return code;
+                }
+                // Definition referenced but not in the map (not _included, or a dangling ref):
+                // show the canonical URL rather than nothing.
+                return new IdType(canonical).toUnqualifiedVersionless().getValue();
+            }
+        }
+        // 3. No definition reference at all: fall back to the action's own code, else a placeholder.
+        if (action.hasCode() && !action.getCode().isEmpty()) {
+            return codeLabel(action.getCode().getFirst());
+        }
+        return "action";
     }
 
     /**
@@ -138,12 +216,12 @@ public final class CarePlanMapper {
                 label);
     }
 
-    private static CarePlanDetailView.ActivityView toServiceRequestView(ServiceRequest sr) {
+    private static CarePlanDetailView.ActivityView toServiceRequestView(ServiceRequest serviceRequest) {
         return new CarePlanDetailView.ActivityView(
-                sr.getIdElement().getIdPart(),
+                serviceRequest.getIdElement().getIdPart(),
                 "ServiceRequest",
-                sr.hasStatus() ? sr.getStatus().toCode() : null,
-                codeLabel(sr.hasCode() ? sr.getCode() : null));
+                serviceRequest.hasStatus() ? serviceRequest.getStatus().toCode() : null,
+                codeLabel(serviceRequest.hasCode() ? serviceRequest.getCode() : null));
     }
 
     private static String codeLabel(CodeableConcept code) {
@@ -154,12 +232,12 @@ public final class CarePlanMapper {
             return code.getText();
         }
         if (code.hasCoding()) {
-            Coding c = code.getCodingFirstRep();
-            if (c.hasDisplay()) {
-                return c.getDisplay();
+            Coding coding = code.getCodingFirstRep();
+            if (coding.hasDisplay()) {
+                return coding.getDisplay();
             }
-            if (c.hasCode()) {
-                return c.getCode();
+            if (coding.hasCode()) {
+                return coding.getCode();
             }
         }
         return null;

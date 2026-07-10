@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Tasks</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <p><a th:href="@{/episodes/{id}(id=${episodeId})}">&larr; Back to episode</a></p>
+
+    <h1>Tasks</h1>
+
+    <div class="card">
+        <p th:if="${tasks == null or tasks.isEmpty()}" class="text-muted">
+            No tasks for this episode.
+        </p>
+        <table th:unless="${tasks == null or tasks.isEmpty()}" class="patient-table">
+            <thead>
+            <tr>
+                <th>Status</th>
+                <th>Description</th>
+                <th>Measurement</th>
+                <th>Reading</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="task : ${tasks}">
+                <td><span class="chip" th:text="${task.status() != null ? task.status() : '-'}">-</span></td>
+                <td th:text="${task.description() != null ? task.description() : '-'}">-</td>
+                <td th:text="${task.measurement() != null and task.measurement().codeDisplay() != null
+                        ? task.measurement().codeDisplay() : '-'}">-
+                </td>
+                <td>
+                    <span th:if="${task.measurement() != null}">
+                        <span th:text="${task.measurement().value() != null ? task.measurement().value() : '-'}">-</span>
+                        <span class="text-muted text-sm"
+                              th:if="${task.measurement().date() != null}"
+                              th:text="'(' + ${task.measurement().date()} + ')'">(date)</span>
+                    </span>
+                    <span th:unless="${task.measurement() != null}">-</span>
+                </td>
+                <td class="task-actions">
+                    <form th:action="@{/episodes/{eoc}/tasks/{tid}/status(eoc=${episodeId},tid=${task.taskId()})}"
+                          method="post" class="task-action-inline">
+                        <input type="hidden" name="patient" th:value="${patientId}">
+                        <input type="hidden" name="target" value="completed">
+                        <button type="submit" class="btn btn-primary btn-sm"
+                                th:disabled="${task.status() == 'completed'}">Approve
+                        </button>
+                    </form>
+                    <form th:action="@{/episodes/{eoc}/tasks/{tid}/status(eoc=${episodeId},tid=${task.taskId()})}"
+                          method="post" class="task-action-inline">
+                        <input type="hidden" name="patient" th:value="${patientId}">
+                        <input type="hidden" name="target" value="cancelled">
+                        <button type="submit" class="btn btn-secondary btn-sm"
+                                th:disabled="${task.status() == 'cancelled'}">Reject
+                        </button>
+                    </form>
+                    <form th:action="@{/episodes/{eoc}/tasks/{tid}/status(eoc=${episodeId},tid=${task.taskId()})}"
+                          method="post" class="episode-status-form">
+                        <input type="hidden" name="patient" th:value="${patientId}">
+                        <select name="target">
+                            <option th:each="code : ${ {'requested','in-progress','on-hold','completed','cancelled','rejected','failed'} }"
+                                    th:if="${code != task.status()}"
+                                    th:value="${code}"
+                                    th:text="${code}">code
+                            </option>
+                        </select>
+                        <button type="submit" class="btn btn-secondary btn-sm">Set</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

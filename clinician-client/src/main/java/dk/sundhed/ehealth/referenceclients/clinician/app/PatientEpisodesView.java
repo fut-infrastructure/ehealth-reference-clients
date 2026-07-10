@@ -19,7 +19,7 @@ public record PatientEpisodesView(
      * diagnosis label, and start date.
      */
     public record EpisodeSummaryView(
-            String id,
+            String episodeId,
             String status,
             String diagnosisLabel,
             String startDate) {

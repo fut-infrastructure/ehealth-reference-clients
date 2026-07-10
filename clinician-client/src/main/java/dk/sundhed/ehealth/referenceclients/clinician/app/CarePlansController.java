@@ -42,11 +42,11 @@ public class CarePlansController {
 
     @GetMapping("/{id}")
     public String show(
-            @PathVariable("episodeOfCareId") String episodeOfCareId,
-            @PathVariable("id") String id,
+            @PathVariable String episodeOfCareId,
+            @PathVariable("id") String carePlanId,
             EHealthContext context,
             Model model) {
-        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, CarePlan.class, id);
+        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
         String qualifiedEoc =
                 idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
 
@@ -54,7 +54,7 @@ public class CarePlansController {
                 carePlanAPI.fetchCarePlanByIdWithActivities(qualifiedId, qualifiedEoc, context);
         CarePlan carePlan = BundleUtil.extractFirst(bundle, CarePlan.class)
                 .orElseThrow(() -> new IllegalStateException(
-                        "CarePlan " + id + " not found"));
+                        "CarePlan " + carePlanId + " not found"));
         List<Task> tasks = BundleUtil.extract(bundle, Task.class);
         List<Appointment> appointments = BundleUtil.extract(bundle, Appointment.class);
         List<ServiceRequest> serviceRequests = BundleUtil.extract(bundle, ServiceRequest.class);
@@ -68,23 +68,23 @@ public class CarePlansController {
 
     @PostMapping("/{id}/activate")
     public String activate(
-            @PathVariable("episodeOfCareId") String episodeOfCareId,
-            @PathVariable("id") String id,
+            @PathVariable String episodeOfCareId,
+            @PathVariable("id") String carePlanId,
             EHealthContext context) {
-        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, CarePlan.class, id);
+        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
         String qualifiedEoc =
                 idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
         carePlanAPI.activateCarePlan(qualifiedId, qualifiedEoc, context);
-        return "redirect:/episodes/" + episodeOfCareId + "/care-plans/" + id;
+        return "redirect:/episodes/" + episodeOfCareId + "/care-plans/" + carePlanId;
     }
 
     @PostMapping("/{id}/status")
     public String changeStatus(
-            @PathVariable("episodeOfCareId") String episodeOfCareId,
-            @PathVariable("id") String id,
+            @PathVariable String episodeOfCareId,
+            @PathVariable("id") String carePlanId,
             @RequestParam("target") String target,
             EHealthContext context) {
-        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, CarePlan.class, id);
+        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
         String qualifiedEoc =
                 idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
         CarePlan.CarePlanStatus status = CarePlan.CarePlanStatus.fromCode(target);
@@ -92,6 +92,6 @@ public class CarePlansController {
             throw new IllegalArgumentException("Unsupported CarePlan status: " + target);
         }
         carePlanAPI.changeCarePlanStatus(qualifiedId, qualifiedEoc, status, context);
-        return "redirect:/episodes/" + episodeOfCareId + "/care-plans/" + id;
+        return "redirect:/episodes/" + episodeOfCareId + "/care-plans/" + carePlanId;
     }
 }

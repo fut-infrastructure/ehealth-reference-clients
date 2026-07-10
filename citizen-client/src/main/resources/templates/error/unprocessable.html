@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Request failed</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="card">
+        <h1>Request failed</h1>
+        <p th:if="${message}" th:text="${message}" class="text-sm text-muted"></p>
+        <a th:href="@{/}" class="btn btn-secondary">Back to home</a>
+    </div>
+</div>
+</body>
+</html>

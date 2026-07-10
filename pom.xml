@@ -20,6 +20,10 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <java.version>${maven.compiler.release}</java.version>
+        <!-- Retain method parameter names in the bytecode so Spring MVC can bind @PathVariable /
+             @RequestParam without an explicit name. spring-boot-starter-parent sets this by
+             default; we import the BOM instead of inheriting the parent, so we set it here. -->
+        <maven.compiler.parameters>true</maven.compiler.parameters>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 

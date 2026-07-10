@@ -37,7 +37,9 @@ import java.util.Set;
 @RequestMapping("/patients")
 public class PatientsController {
 
-    /** Episodes shown per page on the patient view before the server's next/previous links kick in. */
+    /**
+     * Episodes shown per page on the patient view before the server's next/previous links kick in.
+     */
     private static final int EPISODES_PER_PAGE = 10;
 
     private final PatientAPI patientAPI;
@@ -58,23 +60,23 @@ public class PatientsController {
 
     @GetMapping("/{id}")
     public String patient(
-            @PathVariable("id") String id,
+            @PathVariable("id") String patientId,
             @RequestParam(value = "page", required = false) String page,
             EHealthContext context,
             Model model) {
-        Patient patient = patientAPI.findPatientsById(Set.of(id), context).stream()
+        Patient patient = patientAPI.findPatientsById(Set.of(patientId), context).stream()
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("Patient/" + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Patient/" + patientId));
 
-        String qualifiedPatientId = idFactory.createId(FhirServer.PATIENT, Patient.class, id);
+        String qualifiedPatientId = idFactory.createId(FhirServer.PATIENT, Patient.class, patientId);
         EpisodeOfCareAPI.EpisodePage episodePage = episodeOfCareAPI.findEpisodesByPatientPage(
                 qualifiedPatientId, context, page, EPISODES_PER_PAGE);
 
         EpisodeOfCareAPI.SearchResult result =
                 new EpisodeOfCareAPI.SearchResult(episodePage.episodes(), episodePage.conditions());
         List<PatientEpisodesView.EpisodeSummaryView> episodes =
-                mapper.toPatientEpisodesViews(result, Map.of(id, patient)).stream()
-                        .filter(view -> id.equals(view.patientId()))
+                mapper.toPatientEpisodesViews(result, Map.of(patientId, patient)).stream()
+                        .filter(view -> patientId.equals(view.patientId()))
                         .findFirst()
                         .map(PatientEpisodesView::episodes)
                         .orElse(List.of());

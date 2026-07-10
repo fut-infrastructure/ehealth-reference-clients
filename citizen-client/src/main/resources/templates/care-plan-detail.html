@@ -47,15 +47,45 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="a : ${carePlan.activities()}">
-                <td th:text="${a.label() ?: a.type()}">Activity</td>
-                <td th:text="${a.when() != null
-                        ? #temporals.format(a.when(), 'd MMM yyyy HH:mm')
-                        : 'Without time'}">-</td>
+            <tr th:each="activity : ${carePlan.activities()}">
+                <td th:text="${activity.label() ?: activity.type()}">Activity</td>
+                <td th:text="${activity.when() != null
+                        ? #temporals.format(activity.when(), 'd MMM yyyy HH:mm')
+                        : 'Without time'}">-
+                </td>
                 <td>
                     <span class="activity-status"
-                          th:classappend="${a.status() != null ? 'activity-status-' + a.status() : ''}"
-                          th:text="${a.status() ?: '-'}">-</span>
+                          th:classappend="${activity.status() != null ? 'activity-status-' + activity.status() : ''}"
+                          th:text="${activity.status() ?: '-'}">-</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>My measurements</h2>
+        <p class="text-muted" th:if="${measurements == null or measurements.isEmpty()}">
+            No measurements submitted yet.
+        </p>
+        <table th:if="${measurements != null and !measurements.isEmpty()}">
+            <thead>
+            <tr>
+                <th>When</th>
+                <th>Activity</th>
+                <th>Value</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="measurement : ${measurements}">
+                <td th:text="${measurement.when() ?: '-'}">-</td>
+                <td th:text="${measurement.activity() ?: '-'}">-</td>
+                <td th:text="${measurement.value() ?: '-'}">-</td>
+                <td>
+                    <span class="activity-status"
+                          th:classappend="${measurement.status() != null ? 'activity-status-' + measurement.status() : ''}"
+                          th:text="${measurement.status() ?: '-'}">-</span>
                 </td>
             </tr>
             </tbody>

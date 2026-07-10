@@ -41,7 +41,7 @@ public class EpisodeOfCareMapper {
                 continue;
             }
             episodesByPatientId
-                    .computeIfAbsent(patientId, k -> new ArrayList<>())
+                    .computeIfAbsent(patientId, key -> new ArrayList<>())
                     .add(episode);
         }
 
@@ -51,7 +51,7 @@ public class EpisodeOfCareMapper {
             Patient patient = patientsById.get(patientId);
 
             List<PatientEpisodesView.EpisodeSummaryView> summaries = entry.getValue().stream()
-                    .map(e -> toSummary(e, conditionsById))
+                    .map(episodeEntry -> toSummary(episodeEntry, conditionsById))
                     .toList();
 
             views.add(new PatientEpisodesView(
@@ -93,12 +93,12 @@ public class EpisodeOfCareMapper {
                 .map(teamsById::get)
                 .filter(java.util.Objects::nonNull)
                 .map(CareTeam::getName)
-                .filter(n -> n != null && !n.isBlank())
+                .filter(name -> name != null && !name.isBlank())
                 .findFirst()
                 .orElse(null);
 
         List<EpisodeOfCareDetailView.DiagnosisView> diagnoses = episode.getDiagnosis().stream()
-                .map(d -> toDiagnosisView(d, conditionsById))
+                .map(diagnosisComponent -> toDiagnosisView(diagnosisComponent, conditionsById))
                 .toList();
 
         return new EpisodeOfCareDetailView(
@@ -203,9 +203,11 @@ public class EpisodeOfCareMapper {
     private PatientEpisodesView.EpisodeSummaryView toSummary(
             EpisodeOfCare episode, Map<String, Condition> conditionsById) {
         String diagnosisLabel = episode.getDiagnosis().stream()
-                .sorted(Comparator.comparingInt(d -> d.hasRank() ? d.getRank() : Integer.MAX_VALUE))
-                .map(d -> {
-                    Condition condition = resolveCondition(d.getCondition(), conditionsById);
+                .sorted(Comparator.comparingInt(
+                        diagnosisComponent -> diagnosisComponent.hasRank()
+                                ? diagnosisComponent.getRank() : Integer.MAX_VALUE))
+                .map(diagnosisComponent -> {
+                    Condition condition = resolveCondition(diagnosisComponent.getCondition(), conditionsById);
                     if (condition != null) {
                         String label = labelFor(condition.getCode());
                         if (label != null) {
@@ -252,14 +254,14 @@ public class EpisodeOfCareMapper {
             // Contained reference; conditionsById was pre-populated from episode.getContained().
             return conditionsById.get(refStr.substring(1));
         }
-        String id = referenceIdPart(ref);
-        return id == null ? null : conditionsById.get(id);
+        String conditionId = referenceIdPart(ref);
+        return conditionId == null ? null : conditionsById.get(conditionId);
     }
 
     private void addContainedConditions(EpisodeOfCare episode, Map<String, Condition> conditionsById) {
         for (org.hl7.fhir.r4.model.Resource contained : episode.getContained()) {
-            if (contained instanceof Condition c && c.getIdElement().getIdPart() != null) {
-                conditionsById.putIfAbsent(c.getIdElement().getIdPart(), c);
+            if (contained instanceof Condition condition && condition.getIdElement().getIdPart() != null) {
+                conditionsById.putIfAbsent(condition.getIdElement().getIdPart(), condition);
             }
         }
     }
@@ -269,12 +271,12 @@ public class EpisodeOfCareMapper {
             return null;
         }
         if (concept.hasCoding()) {
-            Coding c = concept.getCodingFirstRep();
-            if (c.hasDisplay()) {
-                return c.getDisplay();
+            Coding coding = concept.getCodingFirstRep();
+            if (coding.hasDisplay()) {
+                return coding.getDisplay();
             }
-            if (c.hasCode()) {
-                return c.getCode();
+            if (coding.hasCode()) {
+                return coding.getCode();
             }
         }
         return concept.hasText() ? concept.getText() : null;
@@ -289,10 +291,10 @@ public class EpisodeOfCareMapper {
 
     private <R extends org.hl7.fhir.r4.model.Resource> Map<String, R> indexById(List<R> resources) {
         Map<String, R> map = new HashMap<>();
-        for (R r : resources) {
-            String idPart = r.getIdElement().getIdPart();
+        for (R resource : resources) {
+            String idPart = resource.getIdElement().getIdPart();
             if (idPart != null) {
-                map.put(idPart, r);
+                map.put(idPart, resource);
             }
         }
         return map;
@@ -323,8 +325,8 @@ public class EpisodeOfCareMapper {
             return null;
         }
         return patient.getIdentifier().stream()
-                .filter(id -> CPR_SYSTEM.equals(id.getSystem()))
-                .map(id -> id.getValue() != null ? id.getValue() : "")
+                .filter(identifier -> CPR_SYSTEM.equals(identifier.getSystem()))
+                .map(identifier -> identifier.getValue() != null ? identifier.getValue() : "")
                 .findFirst()
                 .orElse(null);
     }

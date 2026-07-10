@@ -51,7 +51,7 @@ public class SelectContextController {
         }
         CareTeamOption chosen =
                 available.stream()
-                        .filter(c -> careTeamId.equals(c.id()))
+                        .filter(careTeam -> careTeamId.equals(careTeam.careTeamId()))
                         .findFirst()
                         .orElse(null);
         if (chosen == null) {

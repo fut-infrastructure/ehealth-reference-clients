@@ -44,13 +44,7 @@ public class EHealthContextArgumentResolver implements HandlerMethodArgumentReso
         if (!(selected instanceof CareTeamOption careTeam)) {
             throw new StaleAuthenticationException("No selected eHealth context on session");
         }
-        EHealthContext context = EHealthContext.empty();
-        if (careTeam.id() != null) {
-            context = context.withCareTeam(careTeam.id());
-        }
-        if (careTeam.affiliation() != null && careTeam.affiliation().id() != null) {
-            context = context.withOrganization(careTeam.affiliation().id());
-        }
-        return context;
+
+        return careTeam.toEHealthContext();
     }
 }

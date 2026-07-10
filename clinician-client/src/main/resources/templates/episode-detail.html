@@ -53,13 +53,14 @@
             </div>
         </dl>
 
-        <form th:action="@{|/episodes/${episode.id()}/status|}" method="post" class="episode-status-form">
+        <form th:action="@{|/episodes/${episode.episodeId()}/status|}" method="post" class="episode-status-form">
             <label for="episode-status-target">Change status</label>
             <select id="episode-status-target" name="target">
                 <option th:each="code : ${ {'planned','waitlist','active','onhold','finished','cancelled'} }"
                         th:if="${code != episode.status()}"
                         th:value="${code}"
-                        th:text="${code}">code</option>
+                        th:text="${code}">code
+                </option>
             </select>
             <button type="submit" class="btn btn-secondary">Apply</button>
         </form>
@@ -73,7 +74,7 @@
     <div class="card episode-detail-card">
         <div class="data-row">
             <h2>Care plans</h2>
-            <a th:href="@{/episodes/{id}/care-plans/new(id=${episode.id()})}"
+            <a th:href="@{/episodes/{id}/care-plans/new(id=${episode.episodeId()})}"
                class="btn btn-secondary">+ New care plan</a>
         </div>
         <p th:if="${carePlans == null or carePlans.isEmpty()}" class="text-muted">
@@ -81,7 +82,7 @@
         </p>
         <ul class="episode-detail-careplans" th:unless="${carePlans == null or carePlans.isEmpty()}">
             <li th:each="plan : ${carePlans}">
-                <a th:href="@{/episodes/{eoc}/care-plans/{id}(eoc=${episode.id()},id=${plan.id()})}"
+                <a th:href="@{/episodes/{eoc}/care-plans/{id}(eoc=${episode.episodeId()},id=${plan.carePlanId()})}"
                    th:text="${plan.title()}">Care plan</a>
                 <span class="chip" th:text="${plan.status()}">status</span>
             </li>
@@ -101,6 +102,81 @@
                       th:text="'rank ' + ${diagnosis.rank()}">rank 1</span>
             </li>
         </ul>
+    </div>
+
+    <div class="card episode-detail-card">
+        <div class="data-row">
+            <h2>Measurements</h2>
+            <a th:unless="${measurementsForbidden}"
+               th:href="@{/episodes/{id}/measurements(id=${episode.episodeId()},patient=${episode.patientId()})}"
+               class="btn btn-secondary">
+                View all &amp; search
+            </a>
+        </div>
+        <p th:if="${measurementsForbidden}" class="text-muted">
+            Insufficient permissions to view measurements.
+        </p>
+        <div th:unless="${measurementsForbidden}">
+            <p class="text-muted text-sm">Recent, last 90 days.</p>
+            <p th:if="${measurements == null or measurements.isEmpty()}" class="text-muted">
+                No measurements in the last 90 days.
+            </p>
+            <table th:unless="${measurements == null or measurements.isEmpty()}" class="patient-table">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Measurement</th>
+                    <th>Value</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="measurement : ${measurements}">
+                    <td th:text="${measurement.date() != null ? measurement.date() : '-'}">-</td>
+                    <td th:text="${measurement.codeDisplay() != null ? measurement.codeDisplay() : '-'}">-</td>
+                    <td th:text="${measurement.value() != null ? measurement.value() : '-'}">-</td>
+                    <td th:text="${measurement.status() != null ? measurement.status() : '-'}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card episode-detail-card">
+        <div class="data-row">
+            <h2>Tasks</h2>
+            <a th:unless="${tasksForbidden}"
+               th:href="@{/episodes/{id}/tasks(id=${episode.episodeId()},patient=${episode.patientId()})}"
+               class="btn btn-secondary">
+                View all &amp; manage
+            </a>
+        </div>
+        <p th:if="${tasksForbidden}" class="text-muted">
+            Insufficient permissions to view tasks.
+        </p>
+        <div th:unless="${tasksForbidden}">
+            <p th:if="${tasks == null or tasks.isEmpty()}" class="text-muted">
+                No tasks for this episode.
+            </p>
+            <table th:unless="${tasks == null or tasks.isEmpty()}" class="patient-table">
+                <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Priority</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="task : ${tasks}">
+                    <td><span class="chip" th:text="${task.status() != null ? task.status() : '-'}">-</span></td>
+                    <td th:text="${task.category() != null ? task.category() : '-'}">-</td>
+                    <td th:text="${task.description() != null ? task.description() : '-'}">-</td>
+                    <td th:text="${task.priority() != null ? task.priority() : '-'}">-</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 </body>

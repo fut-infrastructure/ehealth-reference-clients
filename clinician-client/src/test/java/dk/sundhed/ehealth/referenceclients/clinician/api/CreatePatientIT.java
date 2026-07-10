@@ -94,8 +94,8 @@ class CreatePatientIT {
 
         Patient patient = response.getParameter().stream()
                 .map(Parameters.ParametersParameterComponent::getResource)
-                .filter(r -> r instanceof Patient)
-                .map(r -> (Patient) r)
+                .filter(resource -> resource instanceof Patient)
+                .map(resource -> (Patient) resource)
                 .findFirst()
                 .orElse(null);
 
@@ -111,10 +111,10 @@ class CreatePatientIT {
                 .as("Patient's first HumanName must have a non-blank family name")
                 .isNotBlank();
 
-        boolean hasCprIdentifier = patient.getIdentifier().stream().anyMatch(id ->
-                CPR_SYSTEM.equals(id.getSystem()) &&
-                        id.getValue() != null &&
-                        id.getValue().replaceAll("[^0-9]", "").equals(cpr.replaceAll("[^0-9]", "")));
+        boolean hasCprIdentifier = patient.getIdentifier().stream().anyMatch(identifier ->
+                CPR_SYSTEM.equals(identifier.getSystem()) &&
+                        identifier.getValue() != null &&
+                        identifier.getValue().replaceAll("[^0-9]", "").equals(cpr.replaceAll("[^0-9]", "")));
 
         assertThat(hasCprIdentifier)
                 .as("Patient must have identifier system %s matching CPR %s", CPR_SYSTEM, cpr)
@@ -162,18 +162,20 @@ class CreatePatientIT {
                     "ROPC token request to " + tokenUrl + " failed: HTTP " + resp.statusCode()
                             + ": " + resp.body());
         }
-        Matcher m = Pattern.compile("\"access_token\"\\s*:\\s*\"([^\"]+)\"").matcher(resp.body());
-        if (!m.find()) {
+        Matcher matcher = Pattern.compile("\"access_token\"\\s*:\\s*\"([^\"]+)\"").matcher(resp.body());
+        if (!matcher.find()) {
             throw new IllegalStateException("No access_token in ROPC response body: " + resp.body());
         }
-        return m.group(1);
+        return matcher.group(1);
     }
 
-    /** Env var wins if set; otherwise the matching key under {@code ehealth.test.*}. */
+    /**
+     * Env var wins if set; otherwise the matching key under {@code ehealth.test.*}.
+     */
     private static String resolve(String envVarName, String yamlKey) {
-        String v = System.getenv(envVarName);
-        if (v != null && !v.isBlank()) {
-            return v;
+        String value = System.getenv(envVarName);
+        if (value != null && !value.isBlank()) {
+            return value;
         }
         Object yamlValue = DEFAULTS.get(yamlKey);
         return yamlValue == null ? null : yamlValue.toString();
@@ -181,17 +183,17 @@ class CreatePatientIT {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> loadTestDefaults() {
-        try (InputStream in = CreatePatientIT.class.getClassLoader()
+        try (InputStream inputStream = CreatePatientIT.class.getClassLoader()
                 .getResourceAsStream("application.yaml")) {
-            if (in == null) {
+            if (inputStream == null) {
                 return Map.of();
             }
-            Map<String, Object> root = new Yaml().load(in);
+            Map<String, Object> root = new Yaml().load(inputStream);
             Map<String, Object> ehealth = (Map<String, Object>) root.getOrDefault("ehealth", Map.of());
             Map<String, Object> test = (Map<String, Object>) ehealth.getOrDefault("test", Map.of());
             return test;
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to load test-scope application.yaml", e);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to load test-scope application.yaml", exception);
         }
     }
 }

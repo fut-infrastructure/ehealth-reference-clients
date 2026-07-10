@@ -16,7 +16,7 @@ import java.util.List;
  * id of the parent EpisodeOfCare so the page can offer a back-link without a second lookup.
  */
 public record CarePlanDetailView(
-        String id,
+        String carePlanId,
         String status,
         boolean canActivate,
         List<String> allowedTransitions,
@@ -35,7 +35,7 @@ public record CarePlanDetailView(
      * resource's code element when present.
      */
     public record ActivityView(
-            String id,
+            String activityId,
             String type,
             @Nullable String status,
             @Nullable String label) {

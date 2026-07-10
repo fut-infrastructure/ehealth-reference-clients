@@ -57,14 +57,14 @@ public final class CarePlanActivationUtil {
 
     private static void activateActivity(Resource activity, Date now) {
         switch (activity) {
-            case ServiceRequest sr -> {
-                sr.setStatus(ServiceRequest.ServiceRequestStatus.ACTIVE);
-                if (!sr.hasOccurrence()) {
-                    sr.setOccurrence(new Period().setStart(now));
+            case ServiceRequest serviceRequest -> {
+                serviceRequest.setStatus(ServiceRequest.ServiceRequestStatus.ACTIVE);
+                if (!serviceRequest.hasOccurrence()) {
+                    serviceRequest.setOccurrence(new Period().setStart(now));
                 }
             }
-            case Task t -> t.setStatus(Task.TaskStatus.READY);
-            case Appointment a -> a.setStatus(Appointment.AppointmentStatus.BOOKED);
+            case Task task -> task.setStatus(Task.TaskStatus.READY);
+            case Appointment appointment -> appointment.setStatus(Appointment.AppointmentStatus.BOOKED);
             default -> {
                 // Unknown activity type: bundle it back as-is. The server will reject it loudly
                 // if the type is unexpected, which is the right failure mode for a reference client.

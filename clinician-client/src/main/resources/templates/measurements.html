@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Measurements</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <p><a th:href="@{/episodes/{id}(id=${episodeId})}">&larr; Back to episode</a></p>
+
+    <h1>Measurements</h1>
+    <p class="text-muted">All measurements, most recent first.</p>
+
+    <form method="get" class="measurement-search"
+          th:action="@{/episodes/{id}/measurements(id=${episodeId})}">
+        <input type="hidden" name="patient" th:value="${patientId}">
+        <input type="text" name="q" th:value="${query}"
+               placeholder="Search by date, measurement or value">
+        <button type="submit" class="btn btn-secondary">Search</button>
+        <a th:if="${query != null and !query.isEmpty()}"
+           th:href="@{/episodes/{id}/measurements(id=${episodeId},patient=${patientId})}"
+           class="btn btn-secondary">Clear</a>
+    </form>
+
+    <div class="card">
+        <p th:if="${measurements == null or measurements.isEmpty()}" class="text-muted">
+            No measurements found.
+        </p>
+        <table th:unless="${measurements == null or measurements.isEmpty()}" class="patient-table">
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Measurement</th>
+                <th>Value</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="measurement : ${measurements}">
+                <td th:text="${measurement.date() != null ? measurement.date() : '-'}">-</td>
+                <td th:text="${measurement.codeDisplay() != null ? measurement.codeDisplay() : '-'}">-</td>
+                <td th:text="${measurement.value() != null ? measurement.value() : '-'}">-</td>
+                <td th:text="${measurement.status() != null ? measurement.status() : '-'}">-</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

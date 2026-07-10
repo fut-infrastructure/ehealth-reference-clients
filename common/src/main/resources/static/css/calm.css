@@ -513,7 +513,7 @@ main {
     flex-wrap: wrap;
 }
 
-.week-unscheduled {
+.week-anytime {
     margin: 1rem 0 1.5rem;
     padding: 1rem;
     border: 1px solid var(--border, #ddd);
@@ -521,9 +521,80 @@ main {
     background: var(--surface-muted, #fafafa);
 }
 
-.week-unscheduled-title {
-    margin: 0 0 .5rem;
+.week-anytime-title {
+    margin: 0 0 .25rem;
     font-size: 1rem;
+}
+
+.week-anytime-help {
+    margin: 0 0 .75rem;
+}
+
+.anytime-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+}
+
+.anytime-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: .75rem;
+    padding: .4rem 0;
+    border-top: 1px solid var(--border-subtle, #eee);
+}
+
+.anytime-item:first-child {
+    border-top: 0;
+}
+
+.anytime-info {
+    display: flex;
+    flex-direction: column;
+    gap: .1rem;
+}
+
+.anytime-title {
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+.anytime-careplan {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.anytime-careplan:hover {
+    text-decoration: underline;
+}
+
+.measurement-search {
+    display: flex;
+    gap: .5rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+.measurement-search input[type="text"] {
+    flex: 1 1 20rem;
+    max-width: 30rem;
+}
+
+.task-actions {
+    display: flex;
+    gap: .4rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.task-action-inline {
+    display: inline;
+    margin: 0;
 }
 
 .week-grid {
@@ -582,9 +653,9 @@ main {
 
 .activity-item {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr;
     align-items: baseline;
-    gap: .5rem;
+    gap: .2rem .5rem;
     padding: .25rem 0;
     border-top: 1px solid var(--border-subtle, #eee);
 }
@@ -612,7 +683,19 @@ a.activity-title:hover {
 }
 
 .activity-progress {
+    grid-column: 2;
     font-variant-numeric: tabular-nums;
+}
+
+.activity-item .btn {
+    grid-column: 1 / -1;
+    width: fit-content;
+    margin-top: .2rem;
+}
+
+.btn-sm {
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--text-sm);
 }
 
 /* ---------------------------------------------------------------------------

@@ -1,12 +1,12 @@
 package dk.sundhed.ehealth.referenceclients.citizen.app;
 
+import dk.sundhed.ehealth.referenceclients.citizen.api.ProcedureBundle;
 import dk.sundhed.ehealth.referenceclients.citizen.api.ProcedureRow;
+import org.hl7.fhir.r4.model.IdType;
 import org.springframework.stereotype.Component;
 
 import java.time.*;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Builds a {@link WeekView} from a flat list of {@link ProcedureRow}s returned by
@@ -21,7 +21,15 @@ public class WeeklyActivitiesMapper {
 
     private static final ZoneId ZONE = ZoneId.systemDefault();
 
-    public WeekView map(LocalDate weekStart, List<ProcedureRow> rows) {
+    public WeekView map(LocalDate weekStart, ProcedureBundle bundle) {
+        List<ProcedureRow> rows = bundle.rows();
+        Map<String, String> episodes = bundle.episodesByCarePlanId();
+
+        // The server returns a row per (ServiceRequest version, timing type). Superseded versions
+        // linger, e.g. an old Adhoc bucket of past submissions alongside the current Resolved slot.
+        // Keep only each ServiceRequest's newest version so stale buckets don't surface as activities.
+        Map<String, Integer> latestVersion = latestVersions(rows);
+
         LocalDate monday = weekStart.with(DayOfWeek.MONDAY);
         LocalDate sundayExclusive = monday.plusDays(7);
 
@@ -29,24 +37,33 @@ public class WeeklyActivitiesMapper {
         List<ActivityView> unscheduled = new ArrayList<>();
 
         for (ProcedureRow row : rows) {
+            if (isSuperseded(row, latestVersion)) {
+                continue;
+            }
+            // Unresolved = server couldn't compute a slot (config issue, not citizen-actionable).
+            // Extra = measurement already submitted outside a slot; not a pending activity.
+            String timingType = row.timingType();
+            if ("Unresolved".equals(timingType) || "Extra".equals(timingType)) {
+                continue;
+            }
             LocalDateTime resolvedAt = toLocal(row.resolvedStart());
             if (resolvedAt == null) {
-                unscheduled.add(toView(row, null));
+                unscheduled.add(toView(row, null, episodes));
                 continue;
             }
             LocalDate date = resolvedAt.toLocalDate();
             if (!date.isBefore(monday) && date.isBefore(sundayExclusive)) {
-                scheduledInWeek.add(toView(row, resolvedAt));
+                scheduledInWeek.add(toView(row, resolvedAt, episodes));
             }
         }
 
         List<DayView> days = new ArrayList<>(7);
-        for (int i = 0; i < 7; i++) {
-            LocalDate date = monday.plusDays(i);
+        for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
+            LocalDate date = monday.plusDays(dayIndex);
             List<ActivityView> ofDay = new ArrayList<>();
-            for (ActivityView a : scheduledInWeek) {
-                if (a.scheduledAt() != null && a.scheduledAt().toLocalDate().equals(date)) {
-                    ofDay.add(a);
+            for (ActivityView activity : scheduledInWeek) {
+                if (activity.scheduledAt() != null && activity.scheduledAt().toLocalDate().equals(date)) {
+                    ofDay.add(activity);
                 }
             }
             ofDay.sort(Comparator.comparing(ActivityView::scheduledAt));
@@ -55,31 +72,71 @@ public class WeeklyActivitiesMapper {
         return new WeekView(monday, List.copyOf(days), List.copyOf(unscheduled));
     }
 
-    private static ActivityView toView(ProcedureRow row, LocalDateTime resolvedAt) {
+    private static ActivityView toView(
+            ProcedureRow row, LocalDateTime resolvedAt, Map<String, String> episodes) {
         String title = row.activity() != null && !row.activity().isBlank()
                 ? row.activity()
                 : "Activity";
+        String carePlanId = bareCarePlanId(row.carePlanRef());
+        String episode = episodes.get(carePlanId);
+        LocalDateTime resolvedEnd = toLocal(row.resolvedEnd());
         return new ActivityView(
-                title, resolvedAt, row.timingType(), progressOf(row), carePlanId(row.carePlanRef()));
+                title, resolvedAt, resolvedEnd, row.timingType(), progressOf(row), carePlanId,
+                row.serviceRequestVersionId(), row.serviceRequestRef(), episode);
     }
 
-    /** Extracts the bare id from a CarePlan reference like {@code CarePlan/635491} or a full URL. */
-    private static String carePlanId(String carePlanRef) {
+    /**
+     * Bare logical id of a CarePlan reference (e.g. {@code CarePlan/635491} or a full URL).
+     */
+    private static String bareCarePlanId(String carePlanRef) {
         if (carePlanRef == null || carePlanRef.isBlank()) {
             return null;
         }
-        int slash = carePlanRef.lastIndexOf('/');
-        return slash >= 0 ? carePlanRef.substring(slash + 1) : carePlanRef;
+        return new IdType(carePlanRef).getIdPart();
+    }
+
+    /**
+     * For each ServiceRequest reference, the highest numeric version present in the response.
+     */
+    private static Map<String, Integer> latestVersions(List<ProcedureRow> rows) {
+        Map<String, Integer> latest = new HashMap<>();
+        for (ProcedureRow row : rows) {
+            String serviceRequestRef = row.serviceRequestRef();
+            Integer version = versionOf(row);
+            if (serviceRequestRef == null || version == null) {
+                continue;
+            }
+            latest.merge(serviceRequestRef, version, Math::max);
+        }
+        return latest;
+    }
+
+    /**
+     * True when the row belongs to an older version of its ServiceRequest than the newest seen.
+     */
+    private static boolean isSuperseded(ProcedureRow row, Map<String, Integer> latestVersion) {
+        Integer newest = latestVersion.get(row.serviceRequestRef());
+        Integer version = versionOf(row);
+        return newest != null && version != null && version < newest;
+    }
+
+    private static Integer versionOf(ProcedureRow row) {
+        String raw = row.serviceRequestVersionId();
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(raw.trim());
+        } catch (NumberFormatException numberFormatException) {
+            return null;
+        }
     }
 
     private static String progressOf(ProcedureRow row) {
-        if (row.occurrencesRequested() == null && row.totalSubmitted() == null) {
+        if (row.occurrencesRequested() == null) {
             return null;
         }
         int submitted = row.totalSubmitted() == null ? 0 : row.totalSubmitted();
-        if (row.occurrencesRequested() == null) {
-            return String.valueOf(submitted);
-        }
         return submitted + "/" + row.occurrencesRequested();
     }
 

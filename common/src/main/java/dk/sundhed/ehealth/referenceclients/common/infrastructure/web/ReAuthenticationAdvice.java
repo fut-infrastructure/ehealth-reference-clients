@@ -20,7 +20,7 @@ public class ReAuthenticationAdvice {
             ClientAuthorizationRequiredException.class,
             OAuth2AuthorizationException.class
     })
-    public String handle(Exception ex) {
+    public String handle(Exception exception) {
         return "redirect:/logout";
     }
 }

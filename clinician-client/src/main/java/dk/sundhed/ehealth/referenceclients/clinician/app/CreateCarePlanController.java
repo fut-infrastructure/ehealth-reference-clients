@@ -44,25 +44,30 @@ public class CreateCarePlanController {
 
     @GetMapping("/new")
     public String showForm(
-            @PathVariable("episodeOfCareId") String episodeOfCareId,
+            @PathVariable String episodeOfCareId,
+            @RequestParam(name = "search", defaultValue = "") String search,
+            @RequestParam(name = "withActivities", defaultValue = "false") boolean withActivities,
             EHealthContext context,
             Model model) {
         String qualifiedEocId =
                 idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
         EHealthContext episodeContext = context.withEpisodeOfCare(qualifiedEocId);
 
-        List<PlanDefinition> planDefinitions =
-                planAPI.findPublishedPlanDefinitions(episodeContext);
-        List<PlanDefinitionOptionView> options = CarePlanMapper.toOptions(planDefinitions);
+        PlanAPI.SearchResult result =
+                planAPI.findPublishedPlanDefinitions(episodeContext, search, withActivities);
+        List<PlanDefinitionOptionView> options =
+                CarePlanMapper.toOptions(result.planDefinitions(), result.activityDefinitions());
 
         model.addAttribute("episodeOfCareId", episodeOfCareId);
         model.addAttribute("planDefinitions", options);
+        model.addAttribute("search", search);
+        model.addAttribute("withActivities", withActivities);
         return "create-careplan";
     }
 
     @PostMapping
     public String create(
-            @PathVariable("episodeOfCareId") String episodeOfCareId,
+            @PathVariable String episodeOfCareId,
             @RequestParam("planDefinitionId") String planDefinitionId,
             EHealthContext context) {
         String qualifiedEocId =

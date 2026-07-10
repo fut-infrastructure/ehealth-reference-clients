@@ -45,7 +45,7 @@
 
         <ul class="episodes-summary-list" th:unless="${patient.episodes().isEmpty()}">
             <li th:each="episode : ${patient.episodes()}" class="episodes-summary-item">
-                <a th:href="@{|/episodes/${episode.id()}|}" class="episodes-summary-link">
+                <a th:href="@{|/episodes/${episode.episodeId()}|}" class="episodes-summary-link">
                     <span class="episodes-summary-diagnosis"
                           th:text="${episode.diagnosisLabel() != null ? episode.diagnosisLabel() : 'Untitled episode'}">Diagnosis</span>
                     <span class="chip episodes-summary-status" th:text="${episode.status()}">status</span>

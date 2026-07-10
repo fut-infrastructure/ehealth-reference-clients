@@ -77,8 +77,8 @@ public final class JsonPatch {
         return "[" + String.join(",", operations) + "]";
     }
 
-    private static String opWithStringValue(String op, String path, String value) {
-        return "{\"op\":\"" + op + "\",\"path\":\""
+    private static String opWithStringValue(String operation, String path, String value) {
+        return "{\"op\":\"" + operation + "\",\"path\":\""
                 + escape(path)
                 + "\",\"value\":\""
                 + escape(value)
@@ -87,9 +87,9 @@ public final class JsonPatch {
 
     private static String escape(String input) {
         StringBuilder out = new StringBuilder(input.length() + 8);
-        for (int i = 0; i < input.length(); i++) {
-            char c = input.charAt(i);
-            switch (c) {
+        for (int index = 0; index < input.length(); index++) {
+            char character = input.charAt(index);
+            switch (character) {
                 case '\\' -> out.append("\\\\");
                 case '"' -> out.append("\\\"");
                 case '\b' -> out.append("\\b");
@@ -98,10 +98,10 @@ public final class JsonPatch {
                 case '\r' -> out.append("\\r");
                 case '\t' -> out.append("\\t");
                 default -> {
-                    if (c < 0x20) {
-                        out.append(String.format("\\u%04x", (int) c));
+                    if (character < 0x20) {
+                        out.append(String.format("\\u%04x", (int) character));
                     } else {
-                        out.append(c);
+                        out.append(character);
                     }
                 }
             }

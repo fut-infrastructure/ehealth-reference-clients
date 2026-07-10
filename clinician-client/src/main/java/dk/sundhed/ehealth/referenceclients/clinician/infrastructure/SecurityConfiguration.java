@@ -29,8 +29,8 @@ public class SecurityConfiguration {
             LogoutSuccessHandler logoutSuccessHandler)
             throws Exception {
         http.authorizeHttpRequests(
-                        a ->
-                                a.requestMatchers(
+                        authorize ->
+                                authorize.requestMatchers(
                                                 "/",
                                                 "/error",
                                                 "/css/**",
@@ -43,7 +43,7 @@ public class SecurityConfiguration {
                                         .anyRequest()
                                         .authenticated())
                 .oauth2Login(login -> login.successHandler(loginSuccessHandler))
-                .logout(l -> l.logoutSuccessHandler(logoutSuccessHandler));
+                .logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler));
         return http.build();
     }
 

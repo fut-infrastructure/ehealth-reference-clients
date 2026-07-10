@@ -1,5 +1,6 @@
 package dk.sundhed.ehealth.referenceclients.clinician.app;
 
+import org.hl7.fhir.r4.model.Identifier;
 import org.hl7.fhir.r4.model.Patient;
 
 import java.util.List;
@@ -59,9 +60,9 @@ public record PatientDetailView(
 
     private static String cpr(Patient patient) {
         return patient.getIdentifier().stream()
-                .filter(id -> CPR_SYSTEM.equals(id.getSystem()))
-                .map(id -> id.getValue())
-                .filter(v -> v != null && !v.isBlank())
+                .filter(identifier -> CPR_SYSTEM.equals(identifier.getSystem()))
+                .map(Identifier::getValue)
+                .filter(value -> value != null && !value.isBlank())
                 .findFirst()
                 .orElse(null);
     }

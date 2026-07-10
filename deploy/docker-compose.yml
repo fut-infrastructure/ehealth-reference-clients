@@ -19,6 +19,8 @@ services:
       FHIR_SERVER_PLAN: ${FHIR_SERVER_PLAN:-https://plan.devenvcgi.ehealth.sundhed.dk/fhir}
       FHIR_SERVER_ORGANIZATION: ${FHIR_SERVER_ORGANIZATION:-https://organization.devenvcgi.ehealth.sundhed.dk/fhir}
       FHIR_SERVER_TERMINOLOGY: ${FHIR_SERVER_TERMINOLOGY:-https://terminology.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_MEASUREMENT: ${FHIR_SERVER_MEASUREMENT:-https://measurement.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_TASK: ${FHIR_SERVER_TASK:-https://task.devenvcgi.ehealth.sundhed.dk/fhir}
 
   citizen-client:
     build:
@@ -32,3 +34,6 @@ services:
       SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_CITIZEN_CLIENT_AUTHENTICATION_METHOD: "none"
       FHIR_SERVER_PATIENT: ${FHIR_SERVER_PATIENT:-https://patient.devenvcgi.ehealth.sundhed.dk/fhir}
       FHIR_SERVER_CARE_PLAN: ${FHIR_SERVER_CARE_PLAN:-https://careplan.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_PLAN: ${FHIR_SERVER_PLAN:-https://plan.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_MEASUREMENT: ${FHIR_SERVER_MEASUREMENT:-https://measurement.devenvcgi.ehealth.sundhed.dk/fhir}
+      FHIR_SERVER_TASK: ${FHIR_SERVER_TASK:-https://task.devenvcgi.ehealth.sundhed.dk/fhir}

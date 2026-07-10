@@ -7,7 +7,7 @@ import java.util.List;
  * {@code /episodes/{id}}.
  */
 public record EpisodeOfCareDetailView(
-        String id,
+        String episodeId,
         String status,
         String startDate,
         String endDate,

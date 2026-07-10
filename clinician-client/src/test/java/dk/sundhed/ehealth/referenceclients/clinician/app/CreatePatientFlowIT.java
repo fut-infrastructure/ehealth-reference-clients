@@ -98,9 +98,12 @@ class CreatePatientFlowIT {
         registry.add("fhir.server.patient", () -> patientBaseUrl);
     }
 
-    @Autowired private MockMvc mockMvc;
-    @Autowired private ClientRegistrationRepository registrations;
-    @Autowired private OAuth2AuthorizedClientRepository authorizedClientRepository;
+    @Autowired
+    private MockMvc mockMvc;
+    @Autowired
+    private ClientRegistrationRepository registrations;
+    @Autowired
+    private OAuth2AuthorizedClientRepository authorizedClientRepository;
 
     @Test
     void postCitizens_createsCitizenThroughFullMvcPipeline() throws Exception {
@@ -211,16 +214,16 @@ class CreatePatientFlowIT {
 
     @SuppressWarnings("unchecked")
     private static Map<String, Object> loadTestDefaults() {
-        try (InputStream in = CreatePatientFlowIT.class.getClassLoader()
+        try (InputStream inputStream = CreatePatientFlowIT.class.getClassLoader()
                 .getResourceAsStream("application.yaml")) {
-            if (in == null) {
+            if (inputStream == null) {
                 return Map.of();
             }
-            Map<String, Object> root = new Yaml().load(in);
+            Map<String, Object> root = new Yaml().load(inputStream);
             Map<String, Object> ehealth = (Map<String, Object>) root.getOrDefault("ehealth", Map.of());
             return (Map<String, Object>) ehealth.getOrDefault("test", Map.of());
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to load test-scope application.yaml", e);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to load test-scope application.yaml", exception);
         }
     }
 }

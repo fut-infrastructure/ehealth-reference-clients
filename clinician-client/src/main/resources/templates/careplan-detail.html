@@ -12,7 +12,7 @@
     <dl class="care-plan-meta">
         <div class="data-row">
             <dt>ID</dt>
-            <dd th:text="${carePlan.id()}">-</dd>
+            <dd th:text="${carePlan.carePlanId()}">-</dd>
         </div>
         <div class="data-row">
             <dt>Status</dt>
@@ -42,18 +42,18 @@
 
     <section class="care-plan-actions">
         <form th:if="${carePlan.canActivate()}"
-              th:action="@{/episodes/{eoc}/care-plans/{id}/activate(eoc=${episodeOfCareId},id=${carePlan.id()})}"
+              th:action="@{/episodes/{eoc}/care-plans/{id}/activate(eoc=${episodeOfCareId},id=${carePlan.carePlanId()})}"
               method="post">
             <button type="submit" class="btn btn-primary">Activate</button>
         </form>
 
         <form th:if="${!carePlan.allowedTransitions().isEmpty()}"
-              th:action="@{/episodes/{eoc}/care-plans/{id}/status(eoc=${episodeOfCareId},id=${carePlan.id()})}"
+              th:action="@{/episodes/{eoc}/care-plans/{id}/status(eoc=${episodeOfCareId},id=${carePlan.carePlanId()})}"
               method="post">
             <label for="target">Change status</label>
             <select id="target" name="target" required>
-                <option th:each="t : ${carePlan.allowedTransitions()}"
-                        th:value="${t}" th:text="${t}">on-hold
+                <option th:each="transition : ${carePlan.allowedTransitions()}"
+                        th:value="${transition}" th:text="${transition}">on-hold
                 </option>
             </select>
             <button type="submit" class="btn btn-secondary">Apply</button>
@@ -74,14 +74,14 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="t : ${carePlan.tasks()}">
-                    <td th:text="${t.id()}">-</td>
+                <tr th:each="task : ${carePlan.tasks()}">
+                    <td th:text="${task.activityId()}">-</td>
                     <td>
                         <span class="activity-status"
-                              th:classappend="${t.status() != null ? 'activity-status-' + t.status() : ''}"
-                              th:text="${t.status() ?: '-'}">-</span>
+                              th:classappend="${task.status() != null ? 'activity-status-' + task.status() : ''}"
+                              th:text="${task.status() ?: '-'}">-</span>
                     </td>
-                    <td th:text="${t.label() ?: '-'}">-</td>
+                    <td th:text="${task.label() ?: '-'}">-</td>
                 </tr>
                 </tbody>
             </table>
@@ -98,14 +98,14 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="a : ${carePlan.appointments()}">
-                    <td th:text="${a.id()}">-</td>
+                <tr th:each="appointment : ${carePlan.appointments()}">
+                    <td th:text="${appointment.activityId()}">-</td>
                     <td>
                         <span class="activity-status"
-                              th:classappend="${a.status() != null ? 'activity-status-' + a.status() : ''}"
-                              th:text="${a.status() ?: '-'}">-</span>
+                              th:classappend="${appointment.status() != null ? 'activity-status-' + appointment.status() : ''}"
+                              th:text="${appointment.status() ?: '-'}">-</span>
                     </td>
-                    <td th:text="${a.label() ?: '-'}">-</td>
+                    <td th:text="${appointment.label() ?: '-'}">-</td>
                 </tr>
                 </tbody>
             </table>
@@ -122,14 +122,14 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="s : ${carePlan.serviceRequests()}">
-                    <td th:text="${s.id()}">-</td>
+                <tr th:each="serviceRequest : ${carePlan.serviceRequests()}">
+                    <td th:text="${serviceRequest.activityId()}">-</td>
                     <td>
                         <span class="activity-status"
-                              th:classappend="${s.status() != null ? 'activity-status-' + s.status() : ''}"
-                              th:text="${s.status() ?: '-'}">-</span>
+                              th:classappend="${serviceRequest.status() != null ? 'activity-status-' + serviceRequest.status() : ''}"
+                              th:text="${serviceRequest.status() ?: '-'}">-</span>
                     </td>
-                    <td th:text="${s.label() ?: '-'}">-</td>
+                    <td th:text="${serviceRequest.label() ?: '-'}">-</td>
                 </tr>
                 </tbody>
             </table>

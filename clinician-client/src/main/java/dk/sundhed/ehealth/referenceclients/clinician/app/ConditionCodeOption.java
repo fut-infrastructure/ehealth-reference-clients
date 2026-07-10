@@ -25,7 +25,7 @@ public record ConditionCodeOption(String code, String display) {
      */
     public static ConditionCodeOption byCode(String code) {
         return OPTIONS.stream()
-                .filter(o -> o.code().equals(code))
+                .filter(option -> option.code().equals(code))
                 .findFirst()
                 .orElse(null);
     }

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Error</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="card">
+        <h1>Something went wrong
+            <span th:if="${status}" th:text="${' (' + status + ')'}" class="text-muted"></span>
+        </h1>
+        <p th:if="${message != null and message != 'No message available'}" th:text="${message}" class="text-sm text-muted"></p>
+        <p th:if="${error}" th:text="${error}" class="text-sm text-muted"></p>
+        <a href="javascript:history.back()" class="btn btn-secondary">Go back</a>
+    </div>
+</div>
+</body>
+</html>

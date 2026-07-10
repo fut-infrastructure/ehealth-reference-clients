@@ -9,17 +9,25 @@
 <header class="site-header">
     <div class="site-header-inner">
         <a th:href="@{/}" class="site-title">FUT Citizen</a>
-        <nav class="site-nav">
+        <nav class="site-nav"
+             th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}">
+            <a th:href="@{/}" class="nav-tab">My week</a>
+            <a th:href="@{/tasks}" class="nav-tab">Tasks</a>
+            <a th:href="@{/me}" class="nav-tab">My profile</a>
+        </nav>
+        <div class="site-user">
             <span class="text-muted text-sm">reference client</span>
-            <a th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}"
-               th:href="@{/me}" class="text-sm">My profile</a>
             <span th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}"
-                  class="text-sm" th:text="${#authentication.name}">user</span>
+                  class="text-sm"
+                  title="Your FHIR user id from the NemLogin token; identifies you to the FUT services">
+                <span class="text-muted">Signed in as</span>
+                <span th:text="${#authentication.name}">user</span>
+            </span>
             <form th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}"
                   th:action="@{/logout}" method="post" style="margin:0">
                 <button type="submit" class="btn btn-secondary">Log out</button>
             </form>
-        </nav>
+        </div>
     </div>
 </header>
 <main>

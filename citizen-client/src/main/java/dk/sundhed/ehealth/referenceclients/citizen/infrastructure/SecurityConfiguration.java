@@ -22,8 +22,8 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(
             HttpSecurity http, LogoutSuccessHandler logoutSuccessHandler) throws Exception {
         http.authorizeHttpRequests(
-                        a ->
-                                a.requestMatchers(
+                        authorize ->
+                                authorize.requestMatchers(
                                                 "/",
                                                 "/error",
                                                 "/css/**",
@@ -36,7 +36,7 @@ public class SecurityConfiguration {
                                         .anyRequest()
                                         .authenticated())
                 .oauth2Login(login -> login.defaultSuccessUrl("/", true))
-                .logout(l -> l.logoutSuccessHandler(logoutSuccessHandler));
+                .logout(logout -> logout.logoutSuccessHandler(logoutSuccessHandler));
         return http.build();
     }
 

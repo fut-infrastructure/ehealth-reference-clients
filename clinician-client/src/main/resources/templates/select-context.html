@@ -14,13 +14,13 @@
         </div>
         <form th:action="@{/select-context}" method="post">
             <ul class="option-list">
-                <li th:each="ct, it : ${careTeams}">
+                <li th:each="careTeam, it : ${careTeams}">
                     <label>
-                        <input type="radio" name="careTeamId" th:value="${ct.id()}"
+                        <input type="radio" name="careTeamId" th:value="${careTeam.careTeamId()}"
                                th:checked="${it.first}" required>
-                        <span th:text="${ct.name()}">CareTeam name</span>
-                        <small th:if="${ct.affiliation() != null}"
-                               th:text="' - ' + ${ct.affiliation().name()}"></small>
+                        <span th:text="${careTeam.name()}">CareTeam name</span>
+                        <small th:if="${careTeam.affiliation() != null}"
+                               th:text="' - ' + ${careTeam.affiliation().name()}"></small>
                     </label>
                 </li>
             </ul>

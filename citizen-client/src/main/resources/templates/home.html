@@ -30,18 +30,22 @@
             </nav>
         </header>
 
-        <section class="week-unscheduled" th:if="${!week.unscheduled().isEmpty()}">
-            <h2 class="week-unscheduled-title">Without time</h2>
-            <ul class="activity-list">
-                <li class="activity-item" th:each="activity : ${week.unscheduled()}">
-                    <a class="activity-title" th:if="${activity.carePlanId() != null}"
-                       th:href="@{/care-plans/{id}(id=${activity.carePlanId()})}"
-                       th:text="${activity.title()}">Title</a>
-                    <span class="activity-title" th:if="${activity.carePlanId() == null}"
-                          th:text="${activity.title()}">Title</span>
-                    <span class="activity-progress text-sm text-muted"
-                          th:if="${activity.progress() != null}"
-                          th:text="${activity.progress()}">0/1</span>
+        <section class="week-anytime" th:if="${!week.unscheduled().isEmpty()}">
+            <h2 class="week-anytime-title">Measure any time</h2>
+            <p class="week-anytime-help text-sm text-muted">
+                These readings aren't tied to a specific day. Submit one whenever you take a measurement.
+            </p>
+            <ul class="anytime-list">
+                <li class="anytime-item" th:each="activity : ${week.unscheduled()}">
+                    <div class="anytime-info">
+                        <span class="anytime-title" th:text="${activity.title()}">Title</span>
+                        <a class="anytime-careplan text-sm"
+                           th:if="${activity.carePlanId() != null}"
+                           th:href="@{/care-plans/{id}(id=${activity.carePlanId()})}">View care plan</a>
+                    </div>
+                    <a class="btn btn-sm btn-primary"
+                       th:if="${activity.serviceRequestRef() != null}"
+                       th:href="@{/measurements/new(serviceRequest=${activity.serviceRequestRef()},episodeRef=${activity.episodeRef()},timingType=${activity.timingType()},slotStart=${activity.scheduledAt() != null ? #temporals.format(activity.scheduledAt(), 'yyyy-MM-dd''T''HH:mm:ss') : null},slotEnd=${activity.scheduledEnd() != null ? #temporals.format(activity.scheduledEnd(), 'yyyy-MM-dd''T''HH:mm:ss') : null},srVersionId=${activity.serviceRequestVersionId()})}">Submit reading</a>
                 </li>
             </ul>
         </section>

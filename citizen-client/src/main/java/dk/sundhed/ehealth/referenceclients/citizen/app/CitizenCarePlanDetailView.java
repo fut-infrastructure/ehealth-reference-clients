@@ -1,41 +1,41 @@
 package dk.sundhed.ehealth.referenceclients.citizen.app;
 
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirExtensions;
+import org.hl7.fhir.r4.model.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import org.hl7.fhir.r4.model.Appointment;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.CodeableConcept;
-import org.hl7.fhir.r4.model.Coding;
-import org.hl7.fhir.r4.model.Period;
-import org.hl7.fhir.r4.model.Resource;
-import org.hl7.fhir.r4.model.ServiceRequest;
-import org.hl7.fhir.r4.model.Task;
 
 /**
  * Citizen-facing projection of a single {@link CarePlan} and its activities, built from the search
  * bundle returned by {@code CitizenCarePlanAPI.fetchCarePlanWithActivities}. All FHIR-shape logic
  * lives here so the Thymeleaf template stays declarative.
  *
- * @param id          bare CarePlan id
- * @param title       plan title, or the id when untitled
- * @param status      plan status code (e.g. {@code active})
- * @param description plan description; null when absent
- * @param start       plan period start; null when absent
- * @param end         plan period end; null when absent
- * @param activities  the plan's activities (Task / Appointment / ServiceRequest), time-sorted
+ * @param carePlanId        bare CarePlan id
+ * @param title             plan title, or the id when untitled
+ * @param status            plan status code (e.g. {@code active})
+ * @param description       plan description; null when absent
+ * @param start             plan period start; null when absent
+ * @param end               plan period end; null when absent
+ * @param episodeRef        fully-qualified EpisodeOfCare URL from the plan's workflow-episodeOfCare
+ *                          extension; null when absent. Used to scope the measurement lookup.
+ * @param serviceRequestIds bare ids of this plan's ServiceRequest activities; used to filter the
+ *                          episode-wide measurement list down to measurements based on this plan
+ * @param activities        the plan's activities (Task / Appointment / ServiceRequest), time-sorted
  */
 public record CitizenCarePlanDetailView(
-        String id,
+        String carePlanId,
         String title,
         String status,
         String description,
         LocalDate start,
         LocalDate end,
+        String episodeRef,
+        List<String> serviceRequestIds,
         List<ActivityDetailView> activities) {
 
     private static final ZoneId ZONE = ZoneId.systemDefault();
@@ -49,22 +49,27 @@ public record CitizenCarePlanDetailView(
      * @param when   scheduled time; null when the activity carries no occurrence
      */
     public record ActivityDetailView(
-            String type, String status, String label, LocalDateTime when) {}
+            String type, String status, String label, LocalDateTime when) {
+    }
 
-    /** Builds the view from the search bundle, or returns null when no CarePlan is present. */
+    /**
+     * Builds the view from the search bundle, or returns null when no CarePlan is present.
+     */
     public static CitizenCarePlanDetailView from(Bundle bundle) {
         CarePlan carePlan = null;
         List<ActivityDetailView> activities = new ArrayList<>();
+        List<String> serviceRequestIds = new ArrayList<>();
         for (Bundle.BundleEntryComponent entry : bundle.getEntry()) {
             Resource resource = entry.getResource();
-            if (resource instanceof CarePlan cp && carePlan == null) {
-                carePlan = cp;
+            if (resource instanceof CarePlan matchedCarePlan && carePlan == null) {
+                carePlan = matchedCarePlan;
             } else if (resource instanceof Task task) {
                 activities.add(fromTask(task));
             } else if (resource instanceof Appointment appointment) {
                 activities.add(fromAppointment(appointment));
             } else if (resource instanceof ServiceRequest serviceRequest) {
                 activities.add(fromServiceRequest(serviceRequest));
+                serviceRequestIds.add(serviceRequest.getIdElement().getIdPart());
             }
         }
         if (carePlan == null) {
@@ -76,11 +81,13 @@ public record CitizenCarePlanDetailView(
         Period period = carePlan.hasPeriod() ? carePlan.getPeriod() : null;
         return new CitizenCarePlanDetailView(
                 carePlan.getIdElement().getIdPart(),
-                carePlan.hasTitle() ? carePlan.getTitle() : carePlan.getIdElement().getIdPart(),
+                carePlan.hasTitle() ? carePlan.getTitle() : "Care plan " + carePlan.getIdElement().getIdPart(),
                 carePlan.hasStatus() ? carePlan.getStatus().toCode() : null,
                 carePlan.hasDescription() ? carePlan.getDescription() : null,
                 toLocalDate(period == null ? null : period.getStart()),
                 toLocalDate(period == null ? null : period.getEnd()),
+                FhirExtensions.referenceValue(carePlan, FhirExtensions.EPISODE_OF_CARE),
+                List.copyOf(serviceRequestIds),
                 List.copyOf(activities));
     }
 
@@ -109,17 +116,17 @@ public record CitizenCarePlanDetailView(
                 when);
     }
 
-    private static ActivityDetailView fromServiceRequest(ServiceRequest sr) {
+    private static ActivityDetailView fromServiceRequest(ServiceRequest serviceRequest) {
         LocalDateTime when = null;
-        if (sr.hasOccurrenceDateTimeType()) {
-            when = LocalDateTime.ofInstant(sr.getOccurrenceDateTimeType().getValue().toInstant(), ZONE);
-        } else if (sr.hasOccurrencePeriod() && sr.getOccurrencePeriod().hasStart()) {
-            when = LocalDateTime.ofInstant(sr.getOccurrencePeriod().getStart().toInstant(), ZONE);
+        if (serviceRequest.hasOccurrenceDateTimeType()) {
+            when = LocalDateTime.ofInstant(serviceRequest.getOccurrenceDateTimeType().getValue().toInstant(), ZONE);
+        } else if (serviceRequest.hasOccurrencePeriod() && serviceRequest.getOccurrencePeriod().hasStart()) {
+            when = LocalDateTime.ofInstant(serviceRequest.getOccurrencePeriod().getStart().toInstant(), ZONE);
         }
         return new ActivityDetailView(
                 "ServiceRequest",
-                sr.hasStatus() ? sr.getStatus().toCode() : null,
-                codeLabel(sr.getCode()),
+                serviceRequest.hasStatus() ? serviceRequest.getStatus().toCode() : null,
+                codeLabel(serviceRequest.getCode()),
                 when);
     }
 
@@ -130,9 +137,9 @@ public record CitizenCarePlanDetailView(
         if (code.hasText()) {
             return code.getText();
         }
-        for (Coding c : code.getCoding()) {
-            if (c.hasDisplay()) {
-                return c.getDisplay();
+        for (Coding coding : code.getCoding()) {
+            if (coding.hasDisplay()) {
+                return coding.getDisplay();
             }
         }
         return code.hasCoding() ? code.getCodingFirstRep().getCode() : null;

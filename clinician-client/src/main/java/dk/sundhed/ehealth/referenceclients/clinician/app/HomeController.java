@@ -86,7 +86,7 @@ public class HomeController {
                         .collect(Collectors.toMap(
                                 patient -> patient.getIdElement().getIdPart(),
                                 Function.identity(),
-                                (a, b) -> a));
+                                (existing, replacement) -> existing));
 
         List<PatientPlanSummaryView> rows = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : planCountByPatient.entrySet()) {
@@ -107,14 +107,7 @@ public class HomeController {
         if (!(selected instanceof CareTeamOption careTeam)) {
             return null;
         }
-        EHealthContext context = EHealthContext.empty();
-        if (careTeam.id() != null) {
-            context = context.withCareTeam(careTeam.id());
-        }
-        if (careTeam.affiliation() != null && careTeam.affiliation().id() != null) {
-            context = context.withOrganization(careTeam.affiliation().id());
-        }
-        return context;
+        return careTeam.toEHealthContext();
     }
 
     private static String idPart(Reference ref) {
@@ -143,9 +136,9 @@ public class HomeController {
 
     private static String cpr(Patient patient) {
         return patient.getIdentifier().stream()
-                .filter(id -> CPR_SYSTEM.equals(id.getSystem()))
+                .filter(identifier -> CPR_SYSTEM.equals(identifier.getSystem()))
                 .map(org.hl7.fhir.r4.model.Identifier::getValue)
-                .filter(v -> v != null && !v.isBlank())
+                .filter(value -> value != null && !value.isBlank())
                 .findFirst()
                 .orElse(null);
     }

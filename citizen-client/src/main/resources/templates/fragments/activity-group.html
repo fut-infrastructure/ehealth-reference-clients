@@ -31,6 +31,15 @@
             <span class="activity-progress text-sm text-muted"
                   th:if="${activity.progress() != null}"
                   th:text="${activity.progress()}">0/1</span>
+            <a class="btn btn-sm btn-primary"
+               th:if="${activity.serviceRequestRef() != null}"
+               th:href="@{/measurements/new(
+                       serviceRequest=${activity.serviceRequestRef()},
+                       episodeRef=${activity.episodeRef()},
+                       timingType=${activity.timingType()},
+                       slotStart=${activity.slotStartParam()},
+                       slotEnd=${activity.slotEndParam()},
+                       srVersionId=${activity.serviceRequestVersionId()})}">Submit</a>
         </li>
     </ul>
 </section>

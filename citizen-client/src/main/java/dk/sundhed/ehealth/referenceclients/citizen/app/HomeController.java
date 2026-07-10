@@ -1,7 +1,7 @@
 package dk.sundhed.ehealth.referenceclients.citizen.app;
 
 import dk.sundhed.ehealth.referenceclients.citizen.api.CitizenCarePlanAPI;
-import dk.sundhed.ehealth.referenceclients.citizen.api.ProcedureRow;
+import dk.sundhed.ehealth.referenceclients.citizen.api.ProcedureBundle;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Citizen landing page.
@@ -58,8 +57,8 @@ public class HomeController {
         }
         LocalDate weekStart = parseWeekStart(weekParam);
         LocalDate weekEnd = weekStart.plusDays(6);
-        List<ProcedureRow> rows = carePlanAPI.getPatientProcedures(weekStart, weekEnd, context);
-        WeekView week = weeklyActivitiesMapper.map(weekStart, rows);
+        ProcedureBundle bundle = carePlanAPI.getPatientProcedures(weekStart, weekEnd, context);
+        WeekView week = weeklyActivitiesMapper.map(weekStart, bundle);
         model.addAttribute("week", week);
         model.addAttribute("today", LocalDate.now());
         return "home";

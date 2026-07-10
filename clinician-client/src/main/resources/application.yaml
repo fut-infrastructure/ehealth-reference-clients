@@ -35,6 +35,8 @@ fhir:
     plan: ${FHIR_SERVER_PLAN:}
     organization: ${FHIR_SERVER_ORGANIZATION:}
     terminology: ${FHIR_SERVER_TERMINOLOGY:}
+    measurement: ${FHIR_SERVER_MEASUREMENT:}
+    task: ${FHIR_SERVER_TASK:}
 
 management:
   endpoints:

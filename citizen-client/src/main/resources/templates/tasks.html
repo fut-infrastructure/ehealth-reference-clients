@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Tasks</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <h1>Tasks</h1>
+
+    <div class="card">
+        <p th:if="${tasks == null or tasks.isEmpty()}" class="text-muted">
+            No tasks assigned.
+        </p>
+        <table th:unless="${tasks == null or tasks.isEmpty()}" class="patient-table">
+            <thead>
+            <tr>
+                <th>Status</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Priority</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="task : ${tasks}">
+                <td><span class="chip" th:text="${task.status() != null ? task.status() : '-'}">-</span></td>
+                <td th:text="${task.category() != null ? task.category() : '-'}">-</td>
+                <td th:text="${task.description() != null ? task.description() : '-'}">-</td>
+                <td th:text="${task.priority() != null ? task.priority() : '-'}">-</td>
+                <td>
+                    <form th:if="${task.status() != 'completed'}"
+                          th:action="@{/tasks/{tid}/complete(tid=${task.taskId()})}"
+                          method="post">
+                        <input type="hidden" name="episodeRef" th:value="${task.episodeRef()}"/>
+                        <button type="submit" class="btn btn-secondary">Mark complete</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

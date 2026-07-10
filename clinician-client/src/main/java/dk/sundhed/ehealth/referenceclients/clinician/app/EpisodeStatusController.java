@@ -35,10 +35,10 @@ public class EpisodeStatusController {
 
     @PostMapping("/episodes/{id}/status")
     public String changeStatus(
-            @PathVariable("id") String id,
+            @PathVariable("id") String episodeId,
             @RequestParam("target") String target,
             EHealthContext context) {
-        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, id);
+        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
         EpisodeOfCare.EpisodeOfCareStatus status = EpisodeOfCare.EpisodeOfCareStatus.fromCode(target);
         if (status == null) {
             throw new IllegalArgumentException("Unsupported EpisodeOfCare status: " + target);
@@ -48,7 +48,7 @@ public class EpisodeStatusController {
             // the episode. Read the episode to learn its patient, then record the consent (scoped
             // to the patient and episode) before flipping the status.
             EpisodeOfCare episode =
-                    episodeOfCareAPI.fetchEpisodeOfCareById(id, context).episodes().getFirst();
+                    episodeOfCareAPI.fetchEpisodeOfCareById(episodeId, context).episodes().getFirst();
             String patientReference = episode.getPatient().getReference();
             EHealthContext consentContext =
                     context.withPatient(patientReference).withEpisodeOfCare(qualifiedId);
@@ -56,6 +56,6 @@ public class EpisodeStatusController {
                     qualifiedId, patientReference, context.organizationId(), consentContext);
         }
         episodeOfCareAPI.changeEpisodeStatus(qualifiedId, status, context);
-        return "redirect:/episodes/" + id;
+        return "redirect:/episodes/" + episodeId;
     }
 }

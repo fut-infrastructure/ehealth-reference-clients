@@ -47,7 +47,9 @@ public class MeController {
         return "me";
     }
 
-    /** View projection of the citizen's own {@link Patient}, with CPR pre-extracted. */
+    /**
+     * View projection of the citizen's own {@link Patient}, with CPR pre-extracted.
+     */
     public record CitizenView(
             String displayName,
             String cpr,
@@ -88,8 +90,8 @@ public class MeController {
 
         private static String cpr(Patient patient) {
             return patient.getIdentifier().stream()
-                    .filter(id -> CPR_SYSTEM.equals(id.getSystem()))
-                    .map(id -> id.getValue() != null ? id.getValue() : "")
+                    .filter(identifier -> CPR_SYSTEM.equals(identifier.getSystem()))
+                    .map(identifier -> identifier.getValue() != null ? identifier.getValue() : "")
                     .findFirst()
                     .orElse("");
         }

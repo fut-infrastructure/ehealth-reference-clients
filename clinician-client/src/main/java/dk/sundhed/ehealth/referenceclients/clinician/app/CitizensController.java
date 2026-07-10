@@ -52,7 +52,7 @@ public class CitizensController {
         try {
             Patient patient = patientAPI.createPatientFromCpr(cpr, context);
             return "redirect:/patients/" + patient.getIdElement().getIdPart();
-        } catch (ResourceNotFoundException e) {
+        } catch (ResourceNotFoundException notFoundException) {
             model.addAttribute("error", "Citizen not found in the CPR registry");
             return "citizens/new";
         }

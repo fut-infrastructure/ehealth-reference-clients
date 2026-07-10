@@ -3,11 +3,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.api;
 import ca.uhn.fhir.rest.api.MethodOutcome;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BundleUtil;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirClientFactory;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.JsonPatch;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.*;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
@@ -130,8 +126,8 @@ public class EpisodeOfCareAPI {
      * Reads a single {@code EpisodeOfCare} by its bare logical id, with its diagnosis {@code
      * Condition}s included.
      */
-    public SearchResult fetchEpisodeOfCareById(String id, EHealthContext context) {
-        String bareId = new IdType(id).getIdPart();
+    public SearchResult fetchEpisodeOfCareById(String episodeId, EHealthContext context) {
+        String bareId = new IdType(episodeId).getIdPart();
         String qualifiedEpisode =
                 baseUrlResolver.resolve(FhirServer.CARE_PLAN) + "/EpisodeOfCare/" + bareId;
 
@@ -200,18 +196,18 @@ public class EpisodeOfCareAPI {
      * Issues a JSON-Patch {@code replace /status} against the given {@code EpisodeOfCare}.
      */
     public void changeEpisodeStatus(
-            String id, EpisodeOfCare.EpisodeOfCareStatus target, EHealthContext context) {
+            String episodeId, EpisodeOfCare.EpisodeOfCareStatus target, EHealthContext context) {
         // Like a direct read, the careplan server denies a patch on an EpisodeOfCare unless the
         // access token carries that episode in its context (HTTP 403 "Security token context
         // missing for user type: EpisodeOfCare"). The id is already the fully-qualified URL.
-        EHealthContext episodeContext = context.withEpisodeOfCare(id);
+        EHealthContext episodeContext = context.withEpisodeOfCare(episodeId);
         IGenericClient client = fhirClientFactory.createClient(FhirServer.CARE_PLAN, episodeContext);
 
         String patch = JsonPatch.builder()
                 .replace("/status", target.toCode())
                 .build();
 
-        client.patch().withBody(patch).withId(new IdType(id)).execute();
+        client.patch().withBody(patch).withId(new IdType(episodeId)).execute();
     }
 
     /**

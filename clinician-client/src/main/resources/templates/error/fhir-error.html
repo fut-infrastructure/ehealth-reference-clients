@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>FHIR error</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="card">
+        <h1>FHIR error <span th:if="${status}" th:text="${status}"></span></h1>
+        <p th:if="${message}" th:text="${message}" class="text-sm text-muted"></p>
+        <a href="javascript:history.back()" class="btn btn-secondary">Go back</a>
+    </div>
+</div>
+</body>
+</html>

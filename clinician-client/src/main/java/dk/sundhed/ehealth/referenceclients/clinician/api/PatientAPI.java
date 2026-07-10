@@ -27,7 +27,9 @@ import java.util.Set;
 @Component
 public class PatientAPI {
 
-    /** CPR system OID, as required by the {@code $createPatient} operation. */
+    /**
+     * CPR system OID, as required by the {@code $createPatient} operation.
+     */
     private static final String CPR_SYSTEM = "urn:oid:1.2.208.176.1.2";
 
     private static final TokenClientParam RES_ID = new TokenClientParam("_id");
@@ -48,7 +50,7 @@ public class PatientAPI {
      * @param context security context carrying the clinician's access token
      * @return the created or updated {@link Patient}
      * @throws ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException when the CPR is unknown
-     *                                                                       at NSP
+     *                                                                      at NSP
      */
     public Patient createPatientFromCpr(String cpr, EHealthContext context) {
         IGenericClient client = fhirClientFactory.createClient(FhirServer.PATIENT, context);
@@ -70,8 +72,8 @@ public class PatientAPI {
 
         return response.getParameter().stream()
                 .map(Parameters.ParametersParameterComponent::getResource)
-                .filter(r -> r instanceof Patient)
-                .map(r -> (Patient) r)
+                .filter(resource -> resource instanceof Patient)
+                .map(resource -> (Patient) resource)
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException(
                         "$createPatient returned no Patient resource in response Parameters"));

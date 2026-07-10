@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layouts/default}">
+<head>
+    <title>Request failed</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="card">
+        <h1>Request failed</h1>
+        <p class="text-muted">The server rejected the request (422 Unprocessable Entity). This
+            usually means a referenced resource (e.g. an ActivityDefinition) no longer exists on
+            the plan server.</p>
+        <p th:if="${message}" th:text="${message}" class="text-sm text-muted"></p>
+        <a href="javascript:history.back()" class="btn btn-secondary">Go back</a>
+    </div>
+</div>
+</body>
+</html>

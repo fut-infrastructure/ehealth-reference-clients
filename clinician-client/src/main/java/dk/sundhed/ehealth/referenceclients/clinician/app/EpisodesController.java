@@ -1,29 +1,20 @@
 package dk.sundhed.ehealth.referenceclients.clinician.app;
 
-import dk.sundhed.ehealth.referenceclients.clinician.api.CarePlanAPI;
-import dk.sundhed.ehealth.referenceclients.clinician.api.EpisodeOfCareAPI;
-import dk.sundhed.ehealth.referenceclients.clinician.api.OrganizationAPI;
-import dk.sundhed.ehealth.referenceclients.clinician.api.PatientAPI;
+import ca.uhn.fhir.rest.server.exceptions.ForbiddenOperationException;
+import dk.sundhed.ehealth.referenceclients.clinician.api.*;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
-import org.hl7.fhir.r4.model.CarePlan;
-import org.hl7.fhir.r4.model.CareTeam;
-import org.hl7.fhir.r4.model.EpisodeOfCare;
-import org.hl7.fhir.r4.model.Organization;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Reference;
-import org.hl7.fhir.r4.model.Resource;
+import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,10 +29,18 @@ import java.util.stream.Collectors;
 @RequestMapping("/episodes")
 public class EpisodesController {
 
+    /**
+     * Recent-measurement preview window on the episode-detail page.
+     */
+    private static final int MEASUREMENT_PREVIEW_DAYS = 90;
+    private static final ZoneId ZONE = ZoneId.systemDefault();
+
     private final EpisodeOfCareAPI episodeOfCareAPI;
     private final CarePlanAPI carePlanAPI;
     private final PatientAPI patientAPI;
     private final OrganizationAPI organizationAPI;
+    private final MeasurementAPI measurementAPI;
+    private final TaskAPI taskAPI;
     private final EpisodeOfCareMapper mapper;
     private final IdFactory idFactory;
 
@@ -50,12 +49,16 @@ public class EpisodesController {
             CarePlanAPI carePlanAPI,
             PatientAPI patientAPI,
             OrganizationAPI organizationAPI,
+            MeasurementAPI measurementAPI,
+            TaskAPI taskAPI,
             EpisodeOfCareMapper mapper,
             IdFactory idFactory) {
         this.episodeOfCareAPI = episodeOfCareAPI;
         this.carePlanAPI = carePlanAPI;
         this.patientAPI = patientAPI;
         this.organizationAPI = organizationAPI;
+        this.measurementAPI = measurementAPI;
+        this.taskAPI = taskAPI;
         this.mapper = mapper;
         this.idFactory = idFactory;
     }
@@ -72,17 +75,55 @@ public class EpisodesController {
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable("id") String id, EHealthContext context, Model model) {
-        EpisodeOfCareAPI.SearchResult result = episodeOfCareAPI.fetchEpisodeOfCareById(id, context);
+    public String detail(@PathVariable("id") String episodeId, EHealthContext context, Model model) {
+        EpisodeOfCareAPI.SearchResult result = episodeOfCareAPI.fetchEpisodeOfCareById(episodeId, context);
         Resolved resolved = resolveReferences(result.episodes(), context);
         EpisodeOfCareDetailView view = mapper.toDetailView(
                 result, resolved.patients(), resolved.organizations(), resolved.careTeams());
         model.addAttribute("episode", view);
 
-        String qualifiedEoc = idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, id);
+        String qualifiedEoc = idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
         List<CarePlan> carePlans = carePlanAPI.findCarePlansByEpisode(qualifiedEoc, context);
         model.addAttribute("carePlans", CarePlanMapper.toSummaries(carePlans));
+
+        String qualifiedPatient = view.patientId() != null
+                ? idFactory.createId(FhirServer.PATIENT, Patient.class, view.patientId())
+                : null;
+        addMeasurementPreview(model, qualifiedEoc, qualifiedPatient, context);
+        addTaskPreview(model, qualifiedEoc, qualifiedPatient, context);
         return "episode-detail";
+    }
+
+    /**
+     * Adds a recent-measurement preview to the model. When the caller's role cannot read
+     * measurements the server answers 403; the page then shows an access notice instead of the
+     * table, so the {@code measurementsForbidden} flag is set rather than failing the whole page.
+     */
+    private void addMeasurementPreview(
+            Model model, String qualifiedEoc, String qualifiedPatient, EHealthContext context) {
+        EHealthContext measurementContext = context.withPatient(qualifiedPatient);
+        Date start = Date.from(
+                LocalDate.now().minusDays(MEASUREMENT_PREVIEW_DAYS).atStartOfDay(ZONE).toInstant());
+        try {
+            Bundle outer = measurementAPI.searchMeasurements(qualifiedEoc, start, measurementContext);
+            model.addAttribute("measurements", MeasurementView.from(outer));
+        } catch (ForbiddenOperationException forbiddenOperationException) {
+            model.addAttribute("measurementsForbidden", true);
+        }
+    }
+
+    /**
+     * Adds a task preview to the model, degrading to a {@code tasksForbidden} flag on 403.
+     */
+    private void addTaskPreview(
+            Model model, String qualifiedEoc, String qualifiedPatient, EHealthContext context) {
+        EHealthContext taskContext = context.withPatient(qualifiedPatient).withEpisodeOfCare(qualifiedEoc);
+        try {
+            List<Task> tasks = taskAPI.findTasksByEpisode(qualifiedEoc, taskContext);
+            model.addAttribute("tasks", TaskView.from(tasks, idFactory));
+        } catch (ForbiddenOperationException forbiddenOperationException) {
+            model.addAttribute("tasksForbidden", true);
+        }
     }
 
     private Resolved resolveReferences(List<EpisodeOfCare> episodes, EHealthContext context) {
@@ -120,8 +161,11 @@ public class EpisodesController {
 
     private static <R extends Resource> Map<String, R> indexById(List<R> resources) {
         return resources.stream()
-                .filter(r -> r.getIdElement().getIdPart() != null)
-                .collect(Collectors.toMap(r -> r.getIdElement().getIdPart(), Function.identity(), (a, b) -> a));
+                .filter(resource -> resource.getIdElement().getIdPart() != null)
+                .collect(Collectors.toMap(
+                        resource -> resource.getIdElement().getIdPart(),
+                        Function.identity(),
+                        (existing, replacement) -> existing));
     }
 
     private record Resolved(

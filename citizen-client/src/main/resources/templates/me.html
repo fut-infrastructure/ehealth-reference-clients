@@ -60,10 +60,10 @@
         <h2>My care plans</h2>
         <p class="text-muted" th:if="${carePlans.isEmpty()}">You have no care plans.</p>
         <ul class="option-list" th:if="${!carePlans.isEmpty()}">
-            <li th:each="cp : ${carePlans}">
-                <a th:href="@{/care-plans/{id}(id=${cp.id()})}">
-                    <span th:text="${cp.title()}">Care plan</span>
-                    <small th:if="${cp.status() != null}" th:text="' - ' + ${cp.status()}"></small>
+            <li th:each="carePlan : ${carePlans}">
+                <a th:href="@{/care-plans/{id}(id=${carePlan.carePlanId()})}">
+                    <span th:text="${carePlan.title()}">Care plan</span>
+                    <small th:if="${carePlan.status() != null}" th:text="' - ' + ${carePlan.status()}"></small>
                 </a>
             </li>
         </ul>

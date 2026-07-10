@@ -70,8 +70,8 @@ public class LoginSuccessHandler implements AuthenticationSuccessHandler {
             HttpSession session = request.getSession();
             session.setAttribute(AVAILABLE_CONTEXTS_ATTRIBUTE, new java.util.ArrayList<>(careTeams));
             log.debug("Stored {} available care teams on session", careTeams.size());
-        } catch (RuntimeException e) {
-            log.warn("Failed to fetch contexts after login", e);
+        } catch (RuntimeException contextsFetchException) {
+            log.warn("Failed to fetch contexts after login", contextsFetchException);
             invalidateAndRedirect(request, response);
             return;
         }

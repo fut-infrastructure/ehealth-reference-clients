@@ -5,6 +5,7 @@ import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.gclient.ReferenceClientParam;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BundleUtil;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirClientFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirExtensions;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.instance.model.api.IAnyResource;
@@ -13,9 +14,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 /**
  * Citizen-side wrapper around the {@code $get-patient-procedures} system operation on
@@ -50,7 +49,7 @@ public class CitizenCarePlanAPI {
      * @param carePlanId bare or qualified CarePlan id
      * @param context    citizen security context (carries the patient)
      * @return the raw search bundle containing the CarePlan and its Task/Appointment/ServiceRequest
-     *     activities; empty when the plan is not visible to this citizen
+     * activities; empty when the plan is not visible to this citizen
      */
     public Bundle fetchCarePlanWithActivities(String carePlanId, EHealthContext context) {
         IGenericClient client = fhirClientFactory.createClient(FhirServer.CARE_PLAN, context);
@@ -86,11 +85,14 @@ public class CitizenCarePlanAPI {
 
     /**
      * Invokes {@code POST /fhir/$get-patient-procedures} on the care-plan server for the citizen's
-     * patient over the inclusive date range {@code [startDate, endDate]}. Returns one
-     * {@link ProcedureRow} per matching ServiceRequest timing slot. When the server has no active
-     * activities for the patient in the window an empty list is returned.
+     * patient over the inclusive date range {@code [startDate, endDate]}.
+     *
+     * <p>Returns a {@link ProcedureBundle} containing the timing rows plus a bare CarePlan-id →
+     * EpisodeOfCare-reference map derived from the CarePlan resources the server includes in the
+     * same response bundle. The episode map is used downstream to scope the measurement-submission
+     * token, which the measurement server requires.
      */
-    public List<ProcedureRow> getPatientProcedures(
+    public ProcedureBundle getPatientProcedures(
             LocalDate startDate, LocalDate endDate, EHealthContext context) {
         IGenericClient client = fhirClientFactory.createClient(FhirServer.CARE_PLAN, context);
 
@@ -112,7 +114,22 @@ public class CitizenCarePlanAPI {
                 .returnResourceType(Bundle.class)
                 .execute();
 
-        return extractRows(response);
+        return new ProcedureBundle(extractRows(response), extractEpisodes(response));
+    }
+
+    private static Map<String, String> extractEpisodes(Bundle response) {
+        Map<String, String> episodeByCarePlanId = new HashMap<>();
+        for (Bundle.BundleEntryComponent entry : response.getEntry()) {
+            if (!(entry.getResource() instanceof CarePlan carePlan)) {
+                continue;
+            }
+            String bareId = carePlan.getIdElement().getIdPart();
+            String episodeRef = FhirExtensions.referenceValue(carePlan, FhirExtensions.EPISODE_OF_CARE);
+            if (bareId != null && episodeRef != null) {
+                episodeByCarePlanId.put(bareId, episodeRef);
+            }
+        }
+        return episodeByCarePlanId;
     }
 
     private static List<ProcedureRow> extractRows(Bundle response) {
@@ -134,9 +151,10 @@ public class CitizenCarePlanAPI {
     private static ProcedureRow toRow(Parameters.ParametersParameterComponent row) {
         String carePlan = null;
         String serviceRequest = null;
+        String serviceRequestVersionId = null;
         String activity = null;
-        DateTimeType resolvedStart = null;
-        DateTimeType resolvedEnd = null;
+        Date resolvedStart = null;
+        Date resolvedEnd = null;
         String timingType = null;
         Integer occurrencesRequested = null;
         Integer totalSubmitted = null;
@@ -146,10 +164,11 @@ public class CitizenCarePlanAPI {
             switch (name) {
                 case "CarePlan" -> carePlan = referenceOf(part);
                 case "ServiceRequest" -> serviceRequest = referenceOf(part);
+                case "ServiceRequestVersionId" -> serviceRequestVersionId = stringOf(part);
                 case "Activity" -> activity = stringOf(part);
-                case "ResolvedTimingStart" -> resolvedStart = dateTimeOf(part);
-                case "ResolvedTimingEnd" -> resolvedEnd = dateTimeOf(part);
-                case "TimingType" -> timingType = stringOf(part);
+                case "ResolvedTimingStart" -> resolvedStart = dateOf(part);
+                case "ResolvedTimingEnd" -> resolvedEnd = dateOf(part);
+                case "TimingType" -> timingType = codeableConceptCodeOf(part);
                 case "OccurrencesRequested" -> occurrencesRequested = integerOf(part);
                 case "TotalSubmitted" -> totalSubmitted = integerOf(part);
                 default -> { /* ignore */ }
@@ -158,9 +177,10 @@ public class CitizenCarePlanAPI {
         return new ProcedureRow(
                 carePlan,
                 serviceRequest,
+                serviceRequestVersionId,
                 activity,
-                resolvedStart != null && resolvedStart.getValue() != null ? resolvedStart.getValue() : null,
-                resolvedEnd != null && resolvedEnd.getValue() != null ? resolvedEnd.getValue() : null,
+                resolvedStart,
+                resolvedEnd,
                 timingType,
                 occurrencesRequested,
                 totalSubmitted);
@@ -170,27 +190,34 @@ public class CitizenCarePlanAPI {
         return part.getValue() instanceof Reference ref && ref.hasReference() ? ref.getReference() : null;
     }
 
-    private static String stringOf(Parameters.ParametersParameterComponent part) {
-        if (part.getValue() instanceof StringType s) {
-            return s.getValue();
+    private static String codeableConceptCodeOf(Parameters.ParametersParameterComponent part) {
+        if (part.getValue() instanceof CodeableConcept codeableConcept && !codeableConcept.getCoding().isEmpty()) {
+            return codeableConcept.getCoding().get(0).getCode();
         }
-        if (part.getValue() instanceof PrimitiveType<?> p) {
-            return p.getValueAsString();
+        return stringOf(part);
+    }
+
+    private static String stringOf(Parameters.ParametersParameterComponent part) {
+        if (part.getValue() instanceof StringType stringType) {
+            return stringType.getValue();
+        }
+        if (part.getValue() instanceof PrimitiveType<?> primitiveType) {
+            return primitiveType.getValueAsString();
         }
         return null;
     }
 
-    private static DateTimeType dateTimeOf(Parameters.ParametersParameterComponent part) {
-        return part.getValue() instanceof DateTimeType dt ? dt : null;
+    private static Date dateOf(Parameters.ParametersParameterComponent part) {
+        return part.getValue() instanceof DateTimeType dateTime ? dateTime.getValue() : null;
     }
 
     private static Integer integerOf(Parameters.ParametersParameterComponent part) {
-        if (part.getValue() instanceof IntegerType i) {
-            return i.getValue();
+        if (part.getValue() instanceof IntegerType integerType) {
+            return integerType.getValue();
         }
-        if (part.getValue() instanceof PrimitiveType<?> p && p.getValueAsString() != null) {
+        if (part.getValue() instanceof PrimitiveType<?> primitiveType && primitiveType.getValueAsString() != null) {
             try {
-                return Integer.parseInt(p.getValueAsString());
+                return Integer.parseInt(primitiveType.getValueAsString());
             } catch (NumberFormatException ignored) {
                 return null;
             }
