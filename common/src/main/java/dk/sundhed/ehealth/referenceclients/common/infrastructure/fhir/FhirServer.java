@@ -14,8 +14,5 @@ public enum FhirServer {
     ORGANIZATION,
     TERMINOLOGY,
     MEASUREMENT,
-    TASK,
-    QUESTIONNAIRE,
-    DOCUMENT_QUERY,
-    DEVICE
+    TASK
 }

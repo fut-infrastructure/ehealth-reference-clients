@@ -4,7 +4,7 @@ import dk.sundhed.ehealth.referenceclients.citizen.api.CitizenEpisodeOfCareAPI;
 import dk.sundhed.ehealth.referenceclients.citizen.api.CitizenTaskAPI;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.CodeableConcepts;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.EpisodeOfCare;
 import org.hl7.fhir.r4.model.Task;
@@ -27,13 +27,13 @@ public class CitizenTasksController {
 
     private final CitizenTaskAPI taskAPI;
     private final CitizenEpisodeOfCareAPI episodeAPI;
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
     public CitizenTasksController(
-            CitizenTaskAPI taskAPI, CitizenEpisodeOfCareAPI episodeAPI, IdFactory idFactory) {
+            CitizenTaskAPI taskAPI, CitizenEpisodeOfCareAPI episodeAPI, BaseUrlResolver baseUrlResolver) {
         this.taskAPI = taskAPI;
         this.episodeAPI = episodeAPI;
-        this.idFactory = idFactory;
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @GetMapping
@@ -41,7 +41,7 @@ public class CitizenTasksController {
         List<EpisodeOfCare> episodes = episodeAPI.listMyActiveEpisodes(context);
         List<CitizenTaskView> taskViews = episodes.stream()
                 .flatMap(eoc -> {
-                    String eocUrl = idFactory.createId(
+                    String eocUrl = baseUrlResolver.createId(
                             FhirServer.CARE_PLAN, EpisodeOfCare.class, eoc.getIdElement().getIdPart());
                     return taskAPI.findTasksByEpisode(eocUrl, context.withEpisodeOfCare(eocUrl)).stream()
                             .map(task -> toView(task, eocUrl));
@@ -56,7 +56,7 @@ public class CitizenTasksController {
             @PathVariable String taskId,
             @RequestParam(name = "episodeRef", required = false) String episodeRef,
             EHealthContext context) {
-        String qualifiedTask = idFactory.createId(FhirServer.TASK, Task.class, taskId);
+        String qualifiedTask = baseUrlResolver.createId(FhirServer.TASK, Task.class, taskId);
         EHealthContext episodeContext = episodeRef != null && !episodeRef.isBlank()
                 ? context.withEpisodeOfCare(episodeRef)
                 : context;
@@ -66,7 +66,7 @@ public class CitizenTasksController {
 
     private CitizenTaskView toView(Task task, String episodeRef) {
         String bareId = task.getIdElement().getIdPart();
-        String qualifiedId = idFactory.createId(FhirServer.TASK, Task.class, bareId);
+        String qualifiedId = baseUrlResolver.createId(FhirServer.TASK, Task.class, bareId);
         String status = task.getStatus() != null ? task.getStatus().toCode() : null;
         String priority = task.getPriority() != null ? task.getPriority().toCode() : null;
         String category = CodeableConcepts.displayOf(task.getCode());

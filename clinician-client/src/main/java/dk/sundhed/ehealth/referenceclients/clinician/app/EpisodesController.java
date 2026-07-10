@@ -3,7 +3,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.app;
 import ca.uhn.fhir.rest.server.exceptions.ForbiddenOperationException;
 import dk.sundhed.ehealth.referenceclients.clinician.api.*;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Controller;
@@ -42,7 +42,7 @@ public class EpisodesController {
     private final MeasurementAPI measurementAPI;
     private final TaskAPI taskAPI;
     private final EpisodeOfCareMapper mapper;
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
     public EpisodesController(
             EpisodeOfCareAPI episodeOfCareAPI,
@@ -52,7 +52,7 @@ public class EpisodesController {
             MeasurementAPI measurementAPI,
             TaskAPI taskAPI,
             EpisodeOfCareMapper mapper,
-            IdFactory idFactory) {
+            BaseUrlResolver baseUrlResolver) {
         this.episodeOfCareAPI = episodeOfCareAPI;
         this.carePlanAPI = carePlanAPI;
         this.patientAPI = patientAPI;
@@ -60,7 +60,7 @@ public class EpisodesController {
         this.measurementAPI = measurementAPI;
         this.taskAPI = taskAPI;
         this.mapper = mapper;
-        this.idFactory = idFactory;
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @GetMapping
@@ -82,12 +82,12 @@ public class EpisodesController {
                 result, resolved.patients(), resolved.organizations(), resolved.careTeams());
         model.addAttribute("episode", view);
 
-        String qualifiedEoc = idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
+        String qualifiedEoc = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
         List<CarePlan> carePlans = carePlanAPI.findCarePlansByEpisode(qualifiedEoc, context);
         model.addAttribute("carePlans", CarePlanMapper.toSummaries(carePlans));
 
         String qualifiedPatient = view.patientId() != null
-                ? idFactory.createId(FhirServer.PATIENT, Patient.class, view.patientId())
+                ? baseUrlResolver.createId(FhirServer.PATIENT, Patient.class, view.patientId())
                 : null;
         addMeasurementPreview(model, qualifiedEoc, qualifiedPatient, context);
         addTaskPreview(model, qualifiedEoc, qualifiedPatient, context);
@@ -120,7 +120,7 @@ public class EpisodesController {
         EHealthContext taskContext = context.withPatient(qualifiedPatient).withEpisodeOfCare(qualifiedEoc);
         try {
             List<Task> tasks = taskAPI.findTasksByEpisode(qualifiedEoc, taskContext);
-            model.addAttribute("tasks", TaskView.from(tasks, idFactory));
+            model.addAttribute("tasks", TaskView.from(tasks, baseUrlResolver));
         } catch (ForbiddenOperationException forbiddenOperationException) {
             model.addAttribute("tasksForbidden", true);
         }

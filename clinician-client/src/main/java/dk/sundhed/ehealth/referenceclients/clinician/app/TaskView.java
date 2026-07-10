@@ -2,7 +2,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.app;
 
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.CodeableConcepts;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import jakarta.annotation.Nullable;
 import org.hl7.fhir.r4.model.IdType;
 import org.hl7.fhir.r4.model.Task;
@@ -28,23 +28,23 @@ public record TaskView(
         @Nullable String focusObservationId,
         @Nullable MeasurementView measurement) {
 
-    public static List<TaskView> from(List<Task> tasks, IdFactory idFactory) {
-        return from(tasks, idFactory, Map.of());
+    public static List<TaskView> from(List<Task> tasks, BaseUrlResolver baseUrlResolver) {
+        return from(tasks, baseUrlResolver, Map.of());
     }
 
     public static List<TaskView> from(
-            List<Task> tasks, IdFactory idFactory, Map<String, MeasurementView> measurementsByObservationId) {
-        return tasks.stream().map(task -> from(task, idFactory, measurementsByObservationId)).toList();
+            List<Task> tasks, BaseUrlResolver baseUrlResolver, Map<String, MeasurementView> measurementsByObservationId) {
+        return tasks.stream().map(task -> from(task, baseUrlResolver, measurementsByObservationId)).toList();
     }
 
     public static TaskView from(
-            Task task, IdFactory idFactory, Map<String, MeasurementView> measurementsByObservationId) {
+            Task task, BaseUrlResolver baseUrlResolver, Map<String, MeasurementView> measurementsByObservationId) {
         String bareId = task.getIdElement().getIdPart();
         String focusId = focusObservationId(task);
         MeasurementView measurement = focusId == null ? null : measurementsByObservationId.get(focusId);
         return new TaskView(
                 bareId,
-                idFactory.createId(FhirServer.TASK, Task.class, bareId),
+                baseUrlResolver.createId(FhirServer.TASK, Task.class, bareId),
                 task.getStatus() != null ? task.getStatus().toCode() : null,
                 CodeableConcepts.displayOf(task.getCode()),
                 task.hasDescription() ? task.getDescription() : null,

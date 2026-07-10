@@ -3,7 +3,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.app;
 import dk.sundhed.ehealth.referenceclients.clinician.api.CarePlanAPI;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BundleUtil;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Controller;
@@ -33,11 +33,11 @@ import java.util.List;
 public class CarePlansController {
 
     private final CarePlanAPI carePlanAPI;
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
-    public CarePlansController(CarePlanAPI carePlanAPI, IdFactory idFactory) {
+    public CarePlansController(CarePlanAPI carePlanAPI, BaseUrlResolver baseUrlResolver) {
         this.carePlanAPI = carePlanAPI;
-        this.idFactory = idFactory;
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @GetMapping("/{id}")
@@ -46,9 +46,9 @@ public class CarePlansController {
             @PathVariable("id") String carePlanId,
             EHealthContext context,
             Model model) {
-        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
+        String qualifiedId = baseUrlResolver.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
         String qualifiedEoc =
-                idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
+                baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
 
         Bundle bundle =
                 carePlanAPI.fetchCarePlanByIdWithActivities(qualifiedId, qualifiedEoc, context);
@@ -71,9 +71,9 @@ public class CarePlansController {
             @PathVariable String episodeOfCareId,
             @PathVariable("id") String carePlanId,
             EHealthContext context) {
-        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
+        String qualifiedId = baseUrlResolver.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
         String qualifiedEoc =
-                idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
+                baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
         carePlanAPI.activateCarePlan(qualifiedId, qualifiedEoc, context);
         return "redirect:/episodes/" + episodeOfCareId + "/care-plans/" + carePlanId;
     }
@@ -84,9 +84,9 @@ public class CarePlansController {
             @PathVariable("id") String carePlanId,
             @RequestParam("target") String target,
             EHealthContext context) {
-        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
+        String qualifiedId = baseUrlResolver.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
         String qualifiedEoc =
-                idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
+                baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
         CarePlan.CarePlanStatus status = CarePlan.CarePlanStatus.fromCode(target);
         if (status == null) {
             throw new IllegalArgumentException("Unsupported CarePlan status: " + target);

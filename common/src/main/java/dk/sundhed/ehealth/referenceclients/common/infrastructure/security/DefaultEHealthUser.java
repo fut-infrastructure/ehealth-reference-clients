@@ -13,7 +13,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.annotation.RequestScope;
 
 /**
- * Request-scoped implementation of {@link EHealthUser}.
+ * Request-scoped current-user component.
+ *
+ * <p>Holds the active {@code OAuth2AuthorizedClient} and runs a context-aware refresh on demand.
+ * Used by {@link dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirClientFactory}
+ * to obtain a bearer token scoped to the requested {@link EHealthContext}.
  *
  * <p>On each call to {@link #obtainAccessToken(EHealthContext)}, loads the current {@link
  * OAuth2AuthorizedClient} from the repository, triggers a context-scoped refresh via {@link
@@ -23,7 +27,7 @@ import org.springframework.web.context.annotation.RequestScope;
  */
 @Component
 @RequestScope
-public class DefaultEHealthUser implements EHealthUser {
+public class DefaultEHealthUser {
 
     private final OAuth2AuthorizedClientRepository authorizedClientRepository;
     private final ClientRegistrationRepository clientRegistrationRepository;
@@ -64,7 +68,6 @@ public class DefaultEHealthUser implements EHealthUser {
      * @throws StaleAuthenticationException if no authorized client is found for the configured
      *                                      registration, which typically indicates the session was invalidated by an app restart
      */
-    @Override
     public String obtainAccessToken(EHealthContext context) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

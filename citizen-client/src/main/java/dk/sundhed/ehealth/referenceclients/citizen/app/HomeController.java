@@ -3,7 +3,7 @@ package dk.sundhed.ehealth.referenceclients.citizen.app;
 import dk.sundhed.ehealth.referenceclients.citizen.api.CitizenCarePlanAPI;
 import dk.sundhed.ehealth.referenceclients.citizen.api.ProcedureBundle;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.Patient;
 import org.springframework.security.core.Authentication;
@@ -37,15 +37,15 @@ public class HomeController {
 
     private final CitizenCarePlanAPI carePlanAPI;
     private final WeeklyActivitiesMapper weeklyActivitiesMapper;
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
     public HomeController(
             CitizenCarePlanAPI carePlanAPI,
             WeeklyActivitiesMapper weeklyActivitiesMapper,
-            IdFactory idFactory) {
+            BaseUrlResolver baseUrlResolver) {
         this.carePlanAPI = carePlanAPI;
         this.weeklyActivitiesMapper = weeklyActivitiesMapper;
-        this.idFactory = idFactory;
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @GetMapping("/")
@@ -74,11 +74,11 @@ public class HomeController {
         if (userId == null || userId.isBlank()) {
             return null;
         }
-        // The FUT nemlogin realm emits a fully-qualified Patient URL; IdFactory would
+        // The FUT nemlogin realm emits a fully-qualified Patient URL; BaseUrlResolver would
         // double-prefix it. Pass through when already qualified.
         String patientId = userId.startsWith("http")
                 ? userId
-                : idFactory.createId(FhirServer.PATIENT, Patient.class, userId);
+                : baseUrlResolver.createId(FhirServer.PATIENT, Patient.class, userId);
         return EHealthContext.empty().withPatient(patientId);
     }
 

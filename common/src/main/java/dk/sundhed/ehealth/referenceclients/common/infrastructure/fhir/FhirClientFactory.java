@@ -3,8 +3,8 @@ package dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir;
 import ca.uhn.fhir.context.FhirContext;
 import ca.uhn.fhir.rest.client.api.IGenericClient;
 import ca.uhn.fhir.rest.client.interceptor.BearerTokenAuthInterceptor;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.DefaultEHealthUser;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthUser;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
@@ -13,10 +13,10 @@ import org.springframework.stereotype.Component;
  * {@link EHealthContext}.
  *
  * <p>This class is a thin infrastructure layer: it resolves the target base URL, obtains a
- * context-scoped bearer token from the current {@link EHealthUser}, and registers a {@link
+ * context-scoped bearer token from the current {@link DefaultEHealthUser}, and registers a {@link
  * BearerTokenAuthInterceptor} on the raw HAPI client. No business logic lives here.
  *
- * <p>{@code FhirClientFactory} is a singleton. {@link EHealthUser} is request-scoped and is
+ * <p>{@code FhirClientFactory} is a singleton. {@link DefaultEHealthUser} is request-scoped and is
  * injected via an {@link ObjectProvider} so that the dependency is resolved per call rather than at
  * construction time.
  */
@@ -25,19 +25,19 @@ public class FhirClientFactory {
 
     private final FhirContext fhirContext;
     private final BaseUrlResolver baseUrlResolver;
-    private final ObjectProvider<EHealthUser> ehealthUserProvider;
+    private final ObjectProvider<DefaultEHealthUser> ehealthUserProvider;
 
     /**
      * Creates a new factory.
      *
      * @param fhirContext         the shared FHIR context supplied by the HAPI Spring Boot starter
      * @param baseUrlResolver     resolves configured base URLs for each {@link FhirServer}
-     * @param ehealthUserProvider provider for the request-scoped {@link EHealthUser}
+     * @param ehealthUserProvider provider for the request-scoped {@link DefaultEHealthUser}
      */
     public FhirClientFactory(
             FhirContext fhirContext,
             BaseUrlResolver baseUrlResolver,
-            ObjectProvider<EHealthUser> ehealthUserProvider) {
+            ObjectProvider<DefaultEHealthUser> ehealthUserProvider) {
         this.fhirContext = fhirContext;
         this.baseUrlResolver = baseUrlResolver;
         this.ehealthUserProvider = ehealthUserProvider;

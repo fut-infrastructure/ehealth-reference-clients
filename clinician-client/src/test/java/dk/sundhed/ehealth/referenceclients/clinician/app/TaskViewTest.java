@@ -1,7 +1,6 @@
 package dk.sundhed.ehealth.referenceclients.clinician.app;
 
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
 import org.hl7.fhir.r4.model.CodeableConcept;
 import org.hl7.fhir.r4.model.Coding;
 import org.hl7.fhir.r4.model.Reference;
@@ -16,13 +15,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TaskViewTest {
 
-    private IdFactory idFactory;
+    private BaseUrlResolver resolver;
 
     @BeforeEach
     void setUp() {
-        BaseUrlResolver resolver = new BaseUrlResolver();
+        resolver = new BaseUrlResolver();
         resolver.setServer(Map.of("task", "https://task.example/fhir"));
-        idFactory = new IdFactory(resolver);
     }
 
     @Test
@@ -30,7 +28,7 @@ class TaskViewTest {
         MeasurementView reading = new MeasurementView("900", "2026-04-16", "Puls", "72 /min", "final");
         Task task = assessmentTask("74364", "Observation/900");
 
-        TaskView view = TaskView.from(List.of(task), idFactory, Map.of("900", reading)).getFirst();
+        TaskView view = TaskView.from(List.of(task), resolver, Map.of("900", reading)).getFirst();
 
         assertThat(view.taskId()).isEqualTo("74364");
         assertThat(view.qualifiedId()).isEqualTo("https://task.example/fhir/Task/74364");
@@ -44,7 +42,7 @@ class TaskViewTest {
     void leavesMeasurementNullWhenFocusIsNotAnObservation() {
         Task task = assessmentTask("74364", "ServiceRequest/1");
 
-        TaskView view = TaskView.from(List.of(task), idFactory, Map.of()).getFirst();
+        TaskView view = TaskView.from(List.of(task), resolver, Map.of()).getFirst();
 
         assertThat(view.focusObservationId()).isNull();
         assertThat(view.measurement()).isNull();
@@ -54,7 +52,7 @@ class TaskViewTest {
     void leavesMeasurementNullWhenFocusIsUnknownToTheIndex() {
         Task task = assessmentTask("74364", "Observation/900");
 
-        TaskView view = TaskView.from(List.of(task), idFactory, Map.of()).getFirst();
+        TaskView view = TaskView.from(List.of(task), resolver, Map.of()).getFirst();
 
         assertThat(view.focusObservationId()).isEqualTo("900");
         assertThat(view.measurement()).isNull();
@@ -64,7 +62,7 @@ class TaskViewTest {
     void twoArgOverloadResolvesNoMeasurements() {
         Task task = assessmentTask("74364", "Observation/900");
 
-        TaskView view = TaskView.from(List.of(task), idFactory).getFirst();
+        TaskView view = TaskView.from(List.of(task), resolver).getFirst();
 
         assertThat(view.measurement()).isNull();
     }

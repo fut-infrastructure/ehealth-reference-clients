@@ -1,6 +1,8 @@
 package dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir;
 
 import jakarta.validation.constraints.NotNull;
+import org.hl7.fhir.instance.model.api.IBaseResource;
+import org.hl7.fhir.r4.model.IdType;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
@@ -37,6 +39,24 @@ public class BaseUrlResolver {
             throw new IllegalStateException("No URL configured for FHIR server " + name);
         }
         return url;
+    }
+
+    /**
+     * Constructs a fully-qualified FHIR resource URL of the form {@code
+     * <baseUrl>/<ResourceType>/<id>}.
+     *
+     * <p>The FUT FHIR infrastructure uses absolute URLs as resource IDs; this pairs the configured
+     * base URL from {@link #resolve(FhirServer)} with HAPI's {@link IdType} for the actual URL
+     * assembly.
+     *
+     * @param server       the FHIR server that owns the resource
+     * @param resourceType the FHIR resource class (e.g. {@code Patient.class})
+     * @param resourceId   the bare logical ID of the resource
+     * @return a fully-qualified URL of the form {@code <baseUrl>/<ResourceType>/<id>}
+     */
+    public String createId(
+            FhirServer server, Class<? extends IBaseResource> resourceType, String resourceId) {
+        return new IdType(resolve(server), resourceType.getSimpleName(), resourceId, null).getValue();
     }
 
     /**

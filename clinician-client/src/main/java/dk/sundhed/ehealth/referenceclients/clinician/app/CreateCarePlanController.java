@@ -3,7 +3,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.app;
 import dk.sundhed.ehealth.referenceclients.clinician.api.CarePlanAPI;
 import dk.sundhed.ehealth.referenceclients.clinician.api.PlanAPI;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.CarePlan;
 import org.hl7.fhir.r4.model.EpisodeOfCare;
@@ -33,13 +33,13 @@ public class CreateCarePlanController {
 
     private final PlanAPI planAPI;
     private final CarePlanAPI carePlanAPI;
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
     public CreateCarePlanController(
-            PlanAPI planAPI, CarePlanAPI carePlanAPI, IdFactory idFactory) {
+            PlanAPI planAPI, CarePlanAPI carePlanAPI, BaseUrlResolver baseUrlResolver) {
         this.planAPI = planAPI;
         this.carePlanAPI = carePlanAPI;
-        this.idFactory = idFactory;
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @GetMapping("/new")
@@ -50,7 +50,7 @@ public class CreateCarePlanController {
             EHealthContext context,
             Model model) {
         String qualifiedEocId =
-                idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
+                baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
         EHealthContext episodeContext = context.withEpisodeOfCare(qualifiedEocId);
 
         PlanAPI.SearchResult result =
@@ -71,9 +71,9 @@ public class CreateCarePlanController {
             @RequestParam("planDefinitionId") String planDefinitionId,
             EHealthContext context) {
         String qualifiedEocId =
-                idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
+                baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
         String qualifiedPlanDefinitionId =
-                idFactory.createId(FhirServer.PLAN, PlanDefinition.class, planDefinitionId);
+                baseUrlResolver.createId(FhirServer.PLAN, PlanDefinition.class, planDefinitionId);
         EHealthContext episodeContext = context.withEpisodeOfCare(qualifiedEocId);
 
         CarePlan created = carePlanAPI.applyPlanDefinition(

@@ -2,7 +2,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.app;
 
 import dk.sundhed.ehealth.referenceclients.clinician.api.MeasurementAPI;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.EpisodeOfCare;
@@ -39,11 +39,11 @@ public class MeasurementsController {
     private static final ZoneId ZONE = ZoneId.systemDefault();
 
     private final MeasurementAPI measurementAPI;
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
-    public MeasurementsController(MeasurementAPI measurementAPI, IdFactory idFactory) {
+    public MeasurementsController(MeasurementAPI measurementAPI, BaseUrlResolver baseUrlResolver) {
         this.measurementAPI = measurementAPI;
-        this.idFactory = idFactory;
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @GetMapping("/{id}/measurements")
@@ -53,10 +53,10 @@ public class MeasurementsController {
             @RequestParam(value = "q", required = false) String query,
             EHealthContext context,
             Model model) {
-        String qualifiedEoc = idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
+        String qualifiedEoc = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
         String qualifiedPatient = (patientId == null || patientId.isBlank())
                 ? null
-                : idFactory.createId(FhirServer.PATIENT, Patient.class, patientId);
+                : baseUrlResolver.createId(FhirServer.PATIENT, Patient.class, patientId);
         EHealthContext measurementContext = context.withPatient(qualifiedPatient);
         Date start = Date.from(
                 LocalDate.now().minusDays(LOOKBACK_DAYS).atStartOfDay(ZONE).toInstant());

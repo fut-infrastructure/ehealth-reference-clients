@@ -1,7 +1,7 @@
 package dk.sundhed.ehealth.referenceclients.citizen.infrastructure;
 
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.StaleAuthenticationException;
 import org.hl7.fhir.r4.model.Patient;
@@ -19,7 +19,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 /**
  * Builds the citizen-side {@link EHealthContext} from the OIDC {@code user_id} claim, qualified
- * into a fully-qualified Patient URL via {@link IdFactory}. Citizens always carry exactly one
+ * into a fully-qualified Patient URL via {@link BaseUrlResolver}. Citizens always carry exactly one
  * context (themselves) so there is no separate picker step.
  */
 @Component
@@ -27,10 +27,10 @@ public class CitizenEHealthContextArgumentResolver implements HandlerMethodArgum
 
     private static final String USER_ID_CLAIM = "user_id";
 
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
-    public CitizenEHealthContextArgumentResolver(IdFactory idFactory) {
-        this.idFactory = idFactory;
+    public CitizenEHealthContextArgumentResolver(BaseUrlResolver baseUrlResolver) {
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @Override
@@ -56,10 +56,10 @@ public class CitizenEHealthContextArgumentResolver implements HandlerMethodArgum
         }
         // The `user_id` claim may be a fully-qualified Patient URL or a bare logical id.
         // If it already starts with "http", pass it through unchanged; otherwise qualify it
-        // via IdFactory to build the full resource URL.
+        // via BaseUrlResolver to build the full resource URL.
         String patientId = userId.startsWith("http")
                 ? userId
-                : idFactory.createId(FhirServer.PATIENT, Patient.class, userId);
+                : baseUrlResolver.createId(FhirServer.PATIENT, Patient.class, userId);
         return EHealthContext.empty().withPatient(patientId);
     }
 }

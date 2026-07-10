@@ -2,7 +2,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.app;
 
 import dk.sundhed.ehealth.referenceclients.clinician.api.EpisodeOfCareAPI;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.Bundle;
 import org.hl7.fhir.r4.model.EpisodeOfCare;
@@ -30,13 +30,13 @@ public class CreateEpisodeController {
 
     private final EpisodeOfCareAPI episodeOfCareAPI;
     private final EpisodeOfCareMapper mapper;
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
     public CreateEpisodeController(
-            EpisodeOfCareAPI episodeOfCareAPI, EpisodeOfCareMapper mapper, IdFactory idFactory) {
+            EpisodeOfCareAPI episodeOfCareAPI, EpisodeOfCareMapper mapper, BaseUrlResolver baseUrlResolver) {
         this.episodeOfCareAPI = episodeOfCareAPI;
         this.mapper = mapper;
-        this.idFactory = idFactory;
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @GetMapping("/new")
@@ -60,7 +60,7 @@ public class CreateEpisodeController {
             return "create-episode";
         }
 
-        String qualifiedPatientId = idFactory.createId(FhirServer.PATIENT, Patient.class, patientId);
+        String qualifiedPatientId = baseUrlResolver.createId(FhirServer.PATIENT, Patient.class, patientId);
         // $create-episode-of-care requires the token to carry patient context; without it the
         // server rejects with "Security token context missing for user type: Patient".
         EHealthContext patientContext = context.withPatient(qualifiedPatientId);

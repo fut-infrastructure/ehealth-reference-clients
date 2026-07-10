@@ -4,7 +4,7 @@ import ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException;
 import dk.sundhed.ehealth.referenceclients.clinician.api.EpisodeOfCareAPI;
 import dk.sundhed.ehealth.referenceclients.clinician.api.PatientAPI;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.Patient;
 import org.springframework.stereotype.Controller;
@@ -26,7 +26,7 @@ import java.util.Set;
  * freshly-created citizen can immediately get their first forløb (and, from the episode, a plan).
  *
  * <p>EpisodeOfCare references its patient by a fully-qualified URL, so the bare path id is
- * qualified via {@link IdFactory} before the {@code patient=} search.
+ * qualified via {@link BaseUrlResolver} before the {@code patient=} search.
  *
  * <p>Episodes are paged through the FHIR server's own cursor: {@code GET /patients/{id}} shows the
  * first page, and an optional {@code ?page=<cursor>} request param carries the opaque
@@ -45,17 +45,17 @@ public class PatientsController {
     private final PatientAPI patientAPI;
     private final EpisodeOfCareAPI episodeOfCareAPI;
     private final EpisodeOfCareMapper mapper;
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
     public PatientsController(
             PatientAPI patientAPI,
             EpisodeOfCareAPI episodeOfCareAPI,
             EpisodeOfCareMapper mapper,
-            IdFactory idFactory) {
+            BaseUrlResolver baseUrlResolver) {
         this.patientAPI = patientAPI;
         this.episodeOfCareAPI = episodeOfCareAPI;
         this.mapper = mapper;
-        this.idFactory = idFactory;
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @GetMapping("/{id}")
@@ -68,7 +68,7 @@ public class PatientsController {
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("Patient/" + patientId));
 
-        String qualifiedPatientId = idFactory.createId(FhirServer.PATIENT, Patient.class, patientId);
+        String qualifiedPatientId = baseUrlResolver.createId(FhirServer.PATIENT, Patient.class, patientId);
         EpisodeOfCareAPI.EpisodePage episodePage = episodeOfCareAPI.findEpisodesByPatientPage(
                 qualifiedPatientId, context, page, EPISODES_PER_PAGE);
 

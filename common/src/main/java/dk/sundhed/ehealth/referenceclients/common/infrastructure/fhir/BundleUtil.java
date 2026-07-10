@@ -46,22 +46,4 @@ public final class BundleUtil {
                 .map(type::cast)
                 .findFirst();
     }
-
-    /**
-     * Returns the single entry in {@code bundle} that is an instance of {@code type}.
-     *
-     * @param bundle the bundle to search
-     * @param type   the resource class to filter by
-     * @param <R>    the resource type
-     * @return the single matching resource
-     * @throws IllegalStateException if the number of matching entries is not exactly one
-     */
-    public static <R extends Resource> R extractOne(Bundle bundle, Class<R> type) {
-        List<R> results = extract(bundle, type);
-        if (results.size() != 1) {
-            throw new IllegalStateException(
-                    "Expected exactly one " + type.getSimpleName() + " in bundle, found " + results.size());
-        }
-        return results.get(0);
-    }
 }

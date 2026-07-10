@@ -3,7 +3,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.app;
 import dk.sundhed.ehealth.referenceclients.clinician.api.ConsentAPI;
 import dk.sundhed.ehealth.referenceclients.clinician.api.EpisodeOfCareAPI;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.FhirServer;
-import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.IdFactory;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.EpisodeOfCare;
 import org.springframework.stereotype.Controller;
@@ -24,13 +24,13 @@ public class EpisodeStatusController {
 
     private final EpisodeOfCareAPI episodeOfCareAPI;
     private final ConsentAPI consentAPI;
-    private final IdFactory idFactory;
+    private final BaseUrlResolver baseUrlResolver;
 
     public EpisodeStatusController(
-            EpisodeOfCareAPI episodeOfCareAPI, ConsentAPI consentAPI, IdFactory idFactory) {
+            EpisodeOfCareAPI episodeOfCareAPI, ConsentAPI consentAPI, BaseUrlResolver baseUrlResolver) {
         this.episodeOfCareAPI = episodeOfCareAPI;
         this.consentAPI = consentAPI;
-        this.idFactory = idFactory;
+        this.baseUrlResolver = baseUrlResolver;
     }
 
     @PostMapping("/episodes/{id}/status")
@@ -38,7 +38,7 @@ public class EpisodeStatusController {
             @PathVariable("id") String episodeId,
             @RequestParam("target") String target,
             EHealthContext context) {
-        String qualifiedId = idFactory.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
+        String qualifiedId = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
         EpisodeOfCare.EpisodeOfCareStatus status = EpisodeOfCare.EpisodeOfCareStatus.fromCode(target);
         if (status == null) {
             throw new IllegalArgumentException("Unsupported EpisodeOfCare status: " + target);
