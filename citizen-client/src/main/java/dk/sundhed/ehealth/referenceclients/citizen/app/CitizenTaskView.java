@@ -5,7 +5,8 @@ import jakarta.annotation.Nullable;
 /**
  * One task row for the citizen task list page.
  *
- * <p>Derived from a {@code Task} returned by {@code Task?patient=...} on {@code fut-task}.
+ * <p>Derived from a {@code Task} returned by {@code Task?episodeOfCare=...&owner=...} on
+ * {@code fut-task}.
  */
 public record CitizenTaskView(
         String taskId,

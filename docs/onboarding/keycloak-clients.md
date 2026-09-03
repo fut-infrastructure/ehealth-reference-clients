@@ -14,9 +14,9 @@ Both realms are served from the same Keycloak host.
 
 ## Client type
 
-**Clinician client: confidential.** A client secret is issued. The backend exchanges the authorization code for tokens server-side and can safely hold the secret. Spring Security's `authorization_code` grant with a client secret is the expected flow.
+**Clinician client: confidential.** Keycloak issues a client secret. The backend exchanges the authorization code for tokens server-side, so it can safely hold that secret. This uses Spring Security's `authorization_code` grant with a client secret.
 
-**Citizen client: public.** No client secret. The reference client is a server-side app, so the authorization code exchange happens server-side; PKCE is used by Spring Security automatically for public clients.
+**Citizen client: public.** No client secret is issued. The reference client is still a server-side app, so the code exchange happens server-side too. Spring Security uses PKCE automatically for public clients.
 
 ## Redirect URIs
 

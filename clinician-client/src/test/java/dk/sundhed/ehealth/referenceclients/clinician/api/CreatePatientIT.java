@@ -32,19 +32,11 @@ import static org.assertj.core.api.Assertions.assertThat;
  * ({@code EHEALTH_TEST_PATIENT_BASE_URL}, {@code EHEALTH_TEST_BEARER_TOKEN},
  * {@code EHEALTH_TEST_USERNAME}, {@code EHEALTH_TEST_PASSWORD}, ...) override per run.
  *
- * <p>Two credential paths are supported:
+ * <p>Credentials are supplied via {@code EHEALTH_TEST_USERNAME} and {@code EHEALTH_TEST_PASSWORD}.
+ * The test fetches a token by POSTing a ROPC (resource owner password credentials) grant to the
+ * configured token URL. Requires a Keycloak client with {@code directAccessGrantsEnabled=true}.
  *
- * <ul>
- *   <li><b>Bearer token</b>: set {@code EHEALTH_TEST_BEARER_TOKEN} to a token obtained
- *       externally (e.g. copied from a browser session, or a {@code curl} round-trip).
- *       Use this for environments whose clinician client does not support direct password
- *       grants (ROPC).</li>
- *   <li><b>ROPC</b>: supply a username and password via {@code EHEALTH_TEST_USERNAME} and
- *       {@code EHEALTH_TEST_PASSWORD}. The test fetches a token by POSTing to the configured
- *       token URL. Requires a Keycloak client with {@code directAccessGrantsEnabled=true}.</li>
- * </ul>
- *
- * <p>When neither credential path produces a usable token, the test is skipped via JUnit's
+ * <p>When no usable credentials are configured, the test is skipped via JUnit's
  * {@link Assumptions} mechanism; it does not fail.
  *
  * <p>See {@code docs/onboarding/connect-to-test.md} for the env-overrides cheatsheet.
@@ -62,8 +54,8 @@ class CreatePatientIT {
         String bearerToken = resolveBearerToken();
 
         Assumptions.assumeTrue(bearerToken != null,
-                "Skipping: no usable credentials. Set EHEALTH_TEST_BEARER_TOKEN, or supply "
-                        + "username + password (env vars override the application.yaml defaults).");
+                "Skipping: no usable credentials. Supply EHEALTH_TEST_USERNAME + "
+                        + "EHEALTH_TEST_PASSWORD (env vars override the application.yaml defaults).");
 
         FhirContext ctx = FhirContext.forR4();
         ctx.getRestfulClientFactory().setServerValidationMode(ServerValidationModeEnum.NEVER);
@@ -122,10 +114,6 @@ class CreatePatientIT {
     }
 
     private static String resolveBearerToken() throws Exception {
-        String direct = System.getenv("EHEALTH_TEST_BEARER_TOKEN");
-        if (direct != null && !direct.isBlank()) {
-            return direct;
-        }
         String username = resolve("EHEALTH_TEST_USERNAME", "username");
         String password = resolve("EHEALTH_TEST_PASSWORD", "password");
         if (username == null || username.isBlank() || password == null || password.isBlank()) {

@@ -1,6 +1,6 @@
 # Connecting to a FUT test environment
 
-This walkthrough targets `devenvcgi`, the default environment baked into the compose file. All env vars are overridable, so the same setup works against any non-production FUT environment (test, preprod, …) by supplying a different `.env`.
+This walkthrough targets `devenvcgi`, the default environment in the compose file. Every setting can be overridden with an env var, so the same setup works against any other non-production FUT environment (test, preprod, and so on) by supplying a different `.env` file.
 
 ## Prerequisites
 
@@ -37,7 +37,7 @@ Docker builds both images from source on first run. Subsequent starts are faster
 **Clinician login**
 
 1. Open http://localhost:8080 and click "Log ind".
-2. Sign in with a test clinician account that has CareTeam membership. Ask your contact at the FUT platform team for test credentials; they are not published here.
+2. Sign in with a test clinician account that has CareTeam membership. On most envs this is `practitioner-demo-user`; ask your contact at the FUT platform team for the password.
 3. After redirect you should see the CareTeam picker.
 
 **Citizen login**
@@ -48,7 +48,7 @@ Docker builds both images from source on first run. Subsequent starts are faster
 
 ## Test CPR
 
-Use CPR `0501792275` (Lars Larsen) for both the clinician "Create citizen" flow and citizen NemLogin. This identity has care plans assigned and resolves via NSP `exttest` on all non-production environments.
+Use CPR `0501792275` (Lars Larsen) for both the clinician "Find citizen" flow and citizen NemLogin. This identity has care plans assigned and resolves on all non-production environments.
 
 ## Running the live integration test
 
@@ -65,18 +65,11 @@ Configuration lives in `clinician-client/src/test/resources/application.yaml`. A
 | `EHEALTH_TEST_CPR`              | CPR to use for `$createPatient` (default: `0501792275`) |
 | `EHEALTH_TEST_USERNAME`         | Test user (ROPC)                                        |
 | `EHEALTH_TEST_PASSWORD`         | Test user password (ROPC)                               |
-| `EHEALTH_TEST_BEARER_TOKEN`     | Pre-obtained token; skips ROPC entirely                 |
 
 Supply credentials via env vars before running:
 
 ```
 EHEALTH_TEST_USERNAME=... EHEALTH_TEST_PASSWORD=... ./mvnw -pl clinician-client -am verify
-```
-
-Or use a pre-obtained bearer token:
-
-```
-EHEALTH_TEST_BEARER_TOKEN=<token> ./mvnw -pl clinician-client -am verify
 ```
 
 ## Deploying to Kubernetes

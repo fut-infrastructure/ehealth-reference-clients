@@ -21,7 +21,8 @@ import java.util.regex.Pattern;
 /**
  * Wraps the {@code $createPatient} custom operation on {@code fut-patient}.
  *
- * <p>One call covers CPR look-up, patient creation (or refresh), and NSP enrichment.
+ * <p>One call covers CPR look-up, patient creation (or refresh), and enrichment from the national
+ * CPR registry.
  * The server returns a {@link Parameters} bundle whose first parameter resource is the
  * resulting {@link Patient}.
  */
@@ -106,8 +107,8 @@ public class PatientAPI {
      * @param cpr     ten-digit CPR string, digits only
      * @param context security context carrying the clinician's access token
      * @return the created or updated {@link Patient}
-     * @throws ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException when the CPR is unknown
-     *                                                                      at NSP
+     * @throws ca.uhn.fhir.rest.server.exceptions.ResourceNotFoundException when the CPR is not
+     *                                                                      found in the CPR registry
      */
     public Patient createPatientFromCpr(String cpr, EHealthContext context) {
         IGenericClient client = fhirClientFactory.createClient(FhirServer.PATIENT, context);

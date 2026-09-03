@@ -1,8 +1,7 @@
 # Test-scope configuration for CreatePatientIT.
 #
 # Any value here can be overridden at runtime by the matching EHEALTH_TEST_* env var.
-# Username and password must be supplied via EHEALTH_TEST_USERNAME / EHEALTH_TEST_PASSWORD
-# (or EHEALTH_TEST_BEARER_TOKEN to skip the ROPC fetch entirely).
+# Username and password must be supplied via EHEALTH_TEST_USERNAME / EHEALTH_TEST_PASSWORD.
 ehealth:
   test:
     patient-base-url: https://patient.devenvcgi.ehealth.sundhed.dk/fhir
@@ -10,5 +9,5 @@ ehealth:
     client-id: ehealth-reference-clinician-client
     scope: openid practitioner
     cpr: '0501792275'
-    username:
+    username: practitioner-demo-user
     password:

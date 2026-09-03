@@ -13,7 +13,7 @@ services:
     environment:
       EHEALTH_ISSUER_URI: ${EHEALTH_ISSUER_URI:-https://saml.devenvcgi.ehealth.sundhed.dk/auth/realms/ehealth}
       EHEALTH_CLIENT_ID: ${EHEALTH_CLIENT_ID:-ehealth-reference-clinician-client}
-      EHEALTH_CLIENT_SECRET: ${EHEALTH_CLIENT_SECRET:-REPLACEME} # Logging in to the clinician service will fail unless this is filled out.
+      EHEALTH_CLIENT_SECRET: ${EHEALTH_CLIENT_SECRET:-eb]sqZgBOf?N_Az]rsIf} # Still need a login, this secret lets you get to the client login screen.
       FHIR_SERVER_PATIENT: ${FHIR_SERVER_PATIENT:-https://patient.devenvcgi.ehealth.sundhed.dk/fhir}
       FHIR_SERVER_CARE_PLAN: ${FHIR_SERVER_CARE_PLAN:-https://careplan.devenvcgi.ehealth.sundhed.dk/fhir}
       FHIR_SERVER_PLAN: ${FHIR_SERVER_PLAN:-https://plan.devenvcgi.ehealth.sundhed.dk/fhir}
