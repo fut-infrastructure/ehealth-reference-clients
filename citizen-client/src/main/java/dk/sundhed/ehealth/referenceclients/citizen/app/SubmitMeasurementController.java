@@ -15,6 +15,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Handles the citizen measurement submission flow.
@@ -77,7 +78,7 @@ public class SubmitMeasurementController {
         Bundle bundle = new Bundle();
         bundle.setType(Bundle.BundleType.TRANSACTION);
         bundle.addEntry()
-                .setFullUrl("urn:uuid:" + java.util.UUID.randomUUID())
+                .setFullUrl("urn:uuid:" + UUID.randomUUID())
                 .setResource(obs)
                 .getRequest()
                 .setMethod(Bundle.HTTPVerb.POST)

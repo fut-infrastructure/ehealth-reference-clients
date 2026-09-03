@@ -31,53 +31,52 @@
 
     <div class="card" th:if="${patients != null}">
         <div class="page-header">
-            <h2>Patients with recent care plans</h2>
-            <a th:href="@{/citizens/new}" class="btn btn-primary">Register citizen</a>
+            <h2 th:text="${searchActive} ? 'Search results' : 'Patients with recent care plans'">Patients</h2>
+            <a th:href="@{/citizens/new}" class="btn btn-primary">Open citizen</a>
         </div>
-        <p class="text-muted">
+
+        <form method="get" th:action="@{/}" class="search-form">
+            <input type="search" name="term" th:value="${term}"
+                   placeholder="Search by name or CPR…" autocomplete="off"
+                   title="Matches the start of a name (e.g. &quot;Lars&quot; finds &quot;Larsen&quot;), or an exact CPR.">
+            <button type="submit" class="btn btn-secondary">Search</button>
+            <a th:if="${searchActive}" th:href="@{/}" class="btn btn-secondary">Clear</a>
+        </form>
+
+        <p th:unless="${searchActive}" class="text-muted">
             Citizens on this care team with a care plan created or updated in the last
             <span th:text="${rosterWindowDays}">30</span> days. Older patients are not listed here;
-            register or open a citizen directly to reach them.
+            search for them by name or CPR, or register a new citizen.
+        </p>
+        <p th:if="${searchActive and truncated}" class="text-muted text-sm">
+            There may be more matches than shown — refine your search for more precise results.
         </p>
 
-        <p th:if="${patients.isEmpty()}" class="text-muted">
+        <p th:if="${patients.isEmpty() and !searchActive}" class="text-muted">
             No care plans updated in the last <span th:text="${rosterWindowDays}">30</span> days on
             this care team. Register a citizen and create their first episode and plan to begin.
         </p>
+        <p th:if="${patients.isEmpty() and searchActive}" class="text-muted">
+            No citizens match "<span th:text="${term}">term</span>" on your care team.
+        </p>
 
-        <div th:unless="${patients.isEmpty()}">
-            <input type="search" id="patient-filter" class="patient-filter"
-                   placeholder="Filter the list below by name or CPR…" autocomplete="off"
-                   oninput="filterPatients(this.value)">
-            <p class="text-muted text-sm">
-                Filters only the rows below (last <span th:text="${rosterWindowDays}">30</span> days);
-                it does not search the whole care team.
-            </p>
-            <table class="patient-table">
-                <thead>
-                <tr><th>Name</th><th>CPR</th><th>Care plans (<span th:text="${rosterWindowDays}">30</span>d)</th></tr>
-                </thead>
-                <tbody>
-                <tr th:each="patient : ${patients}" class="patient-row"
-                    th:attr="data-search=${(patient.patientName() != null ? patient.patientName() : '') + ' ' + (patient.patientCpr() != null ? patient.patientCpr() : '')}"
-                    th:onclick="|window.location.href='@{/patients/{id}(id=${patient.patientId()})}'|">
-                    <td th:text="${patient.patientName() != null ? patient.patientName() : patient.patientId()}">Name</td>
-                    <td th:text="${patient.patientCpr() != null ? patient.patientCpr() : '-'}">CPR</td>
-                    <td th:text="${patient.planCount()}">0</td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <script>
-            function filterPatients(term) {
-                var q = term.trim().toLowerCase();
-                document.querySelectorAll('.patient-row').forEach(function (row) {
-                    var hay = (row.getAttribute('data-search') || '').toLowerCase();
-                    row.style.display = hay.indexOf(q) === -1 ? 'none' : '';
-                });
-            }
-        </script>
+        <table class="patient-table" th:unless="${patients.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Name</th>
+                <th>CPR</th>
+                <th th:unless="${searchActive}">Care plans (<span th:text="${rosterWindowDays}">30</span>d)</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="patient : ${patients}" class="patient-row"
+                th:onclick="|window.location.href='@{/patients/{id}(id=${patient.patientId()})}'|">
+                <td th:text="${patient.patientName() != null ? patient.patientName() : patient.patientId()}">Name</td>
+                <td th:text="${patient.patientCpr() != null ? patient.patientCpr() : '-'}">CPR</td>
+                <td th:unless="${searchActive}" th:text="${patient.planCount()}">0</td>
+            </tr>
+            </tbody>
+        </table>
     </div>
 </div>
 </body>

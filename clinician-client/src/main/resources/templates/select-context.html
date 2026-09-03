@@ -10,9 +10,10 @@
     <div class="card">
         <div class="page-header">
             <h1>Select CareTeam</h1>
-            <p class="lede">Select the CareTeam you want to work in.</p>
+            <p class="lede"
+               th:text="${careTeams.isEmpty()} ? 'No CareTeams available for your account.' : 'Select the CareTeam you want to work in.'">Select the CareTeam you want to work in.</p>
         </div>
-        <form th:action="@{/select-context}" method="post">
+        <form th:unless="${careTeams.isEmpty()}" th:action="@{/select-context}" method="post">
             <ul class="option-list">
                 <li th:each="careTeam, it : ${careTeams}">
                     <label>

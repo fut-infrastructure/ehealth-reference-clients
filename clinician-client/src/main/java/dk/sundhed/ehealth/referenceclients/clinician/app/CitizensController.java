@@ -12,11 +12,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * Create-citizen flow.
+ * Open-or-create-citizen flow.
  *
  * <p>{@code GET /citizens/new} renders a single-field CPR entry form.
- * {@code POST /citizens} calls {@code $createPatient} and redirects to the patient view on
- * success, or re-renders the form with a friendly error when the CPR is unknown at NSP.
+ * {@code POST /citizens} calls {@code $createPatient}, which creates the citizen if the CPR is new
+ * or simply returns the existing one otherwise, and redirects to the patient view either way. The
+ * only failure case re-rendered here is a CPR that NSP doesn't recognise at all.
  */
 @Controller
 @RequestMapping("/citizens")
@@ -35,8 +36,9 @@ public class CitizensController {
     }
 
     /**
-     * Submits a CPR to {@code $createPatient} and forwards to the result page, or re-renders the
-     * form with an error when the CPR is not found at NSP.
+     * Submits a CPR to {@code $createPatient} and always redirects to the resulting citizen,
+     * whether that citizen was just created or already existed. Re-renders the form with an error
+     * only when the CPR is not found at NSP.
      *
      * @param cpr     ten-digit CPR, validated client-side via {@code pattern="\d{10}"}
      * @param context clinician context injected by {@link

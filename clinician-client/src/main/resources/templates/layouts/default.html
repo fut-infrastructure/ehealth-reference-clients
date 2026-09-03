@@ -12,7 +12,7 @@
         <nav class="site-nav"
              th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}">
             <a th:href="@{/episodes}" class="nav-tab">Episodes</a>
-            <a th:href="@{/citizens/new}" class="nav-tab">Register citizen</a>
+            <a th:href="@{/citizens/new}" class="nav-tab">Open citizen</a>
         </nav>
         <div class="site-user">
             <span class="text-muted text-sm">reference client</span>

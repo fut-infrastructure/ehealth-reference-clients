@@ -702,9 +702,15 @@ a.activity-title:hover {
  * Patient roster (home)
  * --------------------------------------------------------------------------- */
 
-.patient-filter {
-    width: 100%;
+.search-form {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
     margin-bottom: var(--space-4);
+}
+
+.search-form input[type="search"] {
+    flex: 1;
 }
 
 .patient-table {

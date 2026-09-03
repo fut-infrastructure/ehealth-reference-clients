@@ -13,7 +13,6 @@ import java.time.format.DateTimeFormatter;
  *                                {@code Unresolved} or {@code Adhoc}
  * @param scheduledEnd            slot end in local time; null when no slot
  * @param timingType              {@code Resolved} | {@code Unresolved} | {@code Adhoc} | {@code Extra}
- * @param progress                short submitted-vs-expected string like {@code "1/3"}; null when not applicable
  * @param carePlanId              bare id of the owning CarePlan, used to link to its detail page; null when the
  *                                row carried no CarePlan reference
  * @param serviceRequestVersionId version id the server used when computing the slot (from
@@ -30,7 +29,6 @@ public record ActivityView(
         LocalDateTime scheduledAt,
         LocalDateTime scheduledEnd,
         String timingType,
-        String progress,
         String carePlanId,
         @Nullable String serviceRequestVersionId,
         @Nullable String serviceRequestRef,

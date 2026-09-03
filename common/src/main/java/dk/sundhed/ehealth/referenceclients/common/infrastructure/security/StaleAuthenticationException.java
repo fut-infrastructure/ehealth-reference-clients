@@ -2,9 +2,8 @@ package dk.sundhed.ehealth.referenceclients.common.infrastructure.security;
 
 /**
  * Thrown when a request arrives with a valid {@code JSESSIONID} cookie but the in-memory session
- * state required to serve the request is missing (typically after an app restart). Caught by {@code
- * ReAuthenticationAdvice} which routes the user through {@code /logout} for a fresh OIDC login. See
- * ADR 0003.
+ * state required to serve the request is missing (typically after an app restart). Caught by
+ * {@code ReAuthenticationAdvice}, which shows a session-expired page prompting a fresh login.
  */
 public class StaleAuthenticationException extends RuntimeException {
 

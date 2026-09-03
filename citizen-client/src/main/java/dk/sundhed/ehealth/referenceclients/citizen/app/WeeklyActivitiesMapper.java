@@ -81,7 +81,7 @@ public class WeeklyActivitiesMapper {
         String episode = episodes.get(carePlanId);
         LocalDateTime resolvedEnd = toLocal(row.resolvedEnd());
         return new ActivityView(
-                title, resolvedAt, resolvedEnd, row.timingType(), progressOf(row), carePlanId,
+                title, resolvedAt, resolvedEnd, row.timingType(), carePlanId,
                 row.serviceRequestVersionId(), row.serviceRequestRef(), episode);
     }
 
@@ -130,14 +130,6 @@ public class WeeklyActivitiesMapper {
         } catch (NumberFormatException numberFormatException) {
             return null;
         }
-    }
-
-    private static String progressOf(ProcedureRow row) {
-        if (row.occurrencesRequested() == null) {
-            return null;
-        }
-        int submitted = row.totalSubmitted() == null ? 0 : row.totalSubmitted();
-        return submitted + "/" + row.occurrencesRequested();
     }
 
     private static LocalDateTime toLocal(java.util.Date date) {

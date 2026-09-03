@@ -3,6 +3,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.app;
 import dk.sundhed.ehealth.referenceclients.clinician.api.CarePlanAPI;
 import dk.sundhed.ehealth.referenceclients.clinician.api.PatientAPI;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.connect.CareTeamOption;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.PatientDemographics;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import jakarta.servlet.http.HttpSession;
 import org.hl7.fhir.r4.model.CarePlan;
@@ -11,12 +12,14 @@ import org.hl7.fhir.r4.model.Reference;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -53,13 +56,52 @@ public class HomeController {
     }
 
     @GetMapping("/")
-    public String home(HttpSession session, Model model) {
+    public String home(
+            HttpSession session,
+            Model model,
+            @RequestParam(required = false) String term) {
         EHealthContext context = selectedContext(session);
         if (context != null && context.careTeamId() != null) {
-            model.addAttribute("patients", roster(context));
-            model.addAttribute("rosterWindowDays", ROSTER_WINDOW_DAYS);
+            boolean searchActive = term != null && !term.isBlank();
+            model.addAttribute("searchActive", searchActive);
+            model.addAttribute("term", term);
+            if (searchActive) {
+                PatientAPI.PatientSearchResult result = patientAPI.searchPatients(term, context);
+                model.addAttribute("patients", searchRows(result.patients(), context));
+                model.addAttribute("truncated", result.truncated());
+            } else {
+                model.addAttribute("patients", roster(context));
+                model.addAttribute("rosterWindowDays", ROSTER_WINDOW_DAYS);
+            }
         }
         return "home";
+    }
+
+    /**
+     * Builds search result rows, narrowed down to the ones on the clinician's care team via
+     * {@link CarePlanAPI#filterPatientIdsOnCareTeam}, mirroring the roster's implicit scoping. There
+     * is no "all citizens" mode: fut-patient's authorization narrowing confines every non-{@code _id}
+     * Patient search under a care-team-scoped practitioner token to that same care-team compartment
+     * regardless of client intent.
+     */
+    private List<PatientPlanSummaryView> searchRows(List<Patient> matches, EHealthContext context) {
+        Set<String> candidateIds = matches.stream()
+                .map(patient -> patient.getIdElement().getIdPart())
+                .filter(id -> id != null && !id.isBlank())
+                .collect(Collectors.toSet());
+
+        Set<String> onTeam = carePlanAPI.filterPatientIdsOnCareTeam(context, candidateIds);
+        List<Patient> scoped = matches.stream()
+                .filter(patient -> onTeam.contains(patient.getIdElement().getIdPart()))
+                .toList();
+
+        return scoped.stream()
+                .map(patient -> new PatientPlanSummaryView(
+                        patient.getIdElement().getIdPart(),
+                        PatientDemographics.displayName(patient),
+                        PatientDemographics.cpr(patient),
+                        null))
+                .toList();
     }
 
     /**
@@ -93,8 +135,8 @@ public class HomeController {
             Patient patient = patientsById.get(entry.getKey());
             rows.add(new PatientPlanSummaryView(
                     entry.getKey(),
-                    patient == null ? null : displayName(patient),
-                    patient == null ? null : cpr(patient),
+                    patient == null ? null : PatientDemographics.displayName(patient),
+                    patient == null ? null : PatientDemographics.cpr(patient),
                     entry.getValue()));
         }
         return rows;
@@ -118,28 +160,4 @@ public class HomeController {
         return idPart != null && !idPart.isBlank() ? idPart : null;
     }
 
-    private static final String CPR_SYSTEM = "urn:oid:1.2.208.176.1.2";
-
-    private static String displayName(Patient patient) {
-        return patient.getName().stream().findFirst().map(name -> {
-            String given = name.getGivenAsSingleString();
-            String family = name.getFamily();
-            if (given != null && !given.isBlank() && family != null && !family.isBlank()) {
-                return given + " " + family;
-            }
-            if (family != null && !family.isBlank()) {
-                return family;
-            }
-            return given != null ? given : null;
-        }).orElse(null);
-    }
-
-    private static String cpr(Patient patient) {
-        return patient.getIdentifier().stream()
-                .filter(identifier -> CPR_SYSTEM.equals(identifier.getSystem()))
-                .map(org.hl7.fhir.r4.model.Identifier::getValue)
-                .filter(value -> value != null && !value.isBlank())
-                .findFirst()
-                .orElse(null);
-    }
 }

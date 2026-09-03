@@ -163,10 +163,13 @@ public class EpisodeOfCareMapper {
         episode.setPatient(new Reference(patientId));
         if (context.organizationId() != null) {
             Reference orgRef = new Reference(context.organizationId());
-            episode.setManagingOrganization(orgRef);
             episode.addExtension()
                     .setUrl("http://ehealth.sundhed.dk/fhir/StructureDefinition/ehealth-episodeofcare-caremanagerOrganization")
                     .setValue(orgRef);
+            episode.addExtension()
+                    .setUrl("http://ehealth.sundhed.dk/fhir/StructureDefinition/ehealth-managing-organization")
+                    .addExtension(new Extension("organisation", orgRef))
+                    .addExtension(new Extension("period", new Period().setStart(now)));
         }
         if (context.careTeamId() != null) {
             episode.addTeam(new Reference(context.careTeamId()));

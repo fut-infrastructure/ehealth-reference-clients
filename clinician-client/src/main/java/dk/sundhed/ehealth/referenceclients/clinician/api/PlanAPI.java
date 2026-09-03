@@ -52,7 +52,7 @@ public class PlanAPI {
      * why the full set is never walked.
      *
      * @param context        security context
-     * @param titleSearch    optional title substring; passed as {@code title:contains} when non-blank
+     * @param titleSearch    optional title prefix
      * @param withActivities when true, adds {@code definition:missing=false} so only PlanDefinitions
      *                       that carry at least one action with a definition are returned
      * @return up to {@link #MAX_PLAN_DEFINITIONS} published PlanDefinitions
@@ -66,7 +66,7 @@ public class PlanAPI {
                 .where(PlanDefinition.STATUS.exactly().code("active"));
 
         if (titleSearch != null && !titleSearch.isBlank()) {
-            query = query.and(PlanDefinition.TITLE.contains().value(titleSearch));
+            query = query.and(PlanDefinition.TITLE.matches().value(titleSearch));
         }
         if (withActivities) {
             query = query.and(new ca.uhn.fhir.rest.gclient.ReferenceClientParam("definition")

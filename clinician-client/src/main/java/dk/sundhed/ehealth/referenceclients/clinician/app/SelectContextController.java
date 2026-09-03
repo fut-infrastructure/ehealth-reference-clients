@@ -2,6 +2,7 @@ package dk.sundhed.ehealth.referenceclients.clinician.app;
 
 import dk.sundhed.ehealth.referenceclients.clinician.infrastructure.LoginSuccessHandler;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.connect.CareTeamOption;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.StaleAuthenticationException;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -13,10 +14,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import java.util.List;
 
 /**
- * Care team picker. The list is read from session attribute
- * {@value LoginSuccessHandler#AVAILABLE_CONTEXTS_ATTRIBUTE}; the chosen entry is written to
- * {@value #SELECTED_CONTEXT_ATTRIBUTE}. Empty list or stale session bounces the user through
- * {@code /logout} per ADR 0003.
+ * Care team picker. Reads the available care teams from the session and stores the chosen one
+ * back on the session for later requests to use. If the session doesn't have the list at all
+ * (e.g. an expired session), that's treated as a stale session rather than an empty list.
  */
 @Controller
 @RequestMapping("/select-context")
@@ -30,8 +30,8 @@ public class SelectContextController {
         List<CareTeamOption> available =
                 (List<CareTeamOption>)
                         session.getAttribute(LoginSuccessHandler.AVAILABLE_CONTEXTS_ATTRIBUTE);
-        if (available == null || available.isEmpty()) {
-            return "redirect:/logout";
+        if (available == null) {
+            throw new StaleAuthenticationException("No available CareTeams on session");
         }
         if (session.getAttribute(SELECTED_CONTEXT_ATTRIBUTE) != null) {
             return "redirect:/";
@@ -47,7 +47,7 @@ public class SelectContextController {
                 (List<CareTeamOption>)
                         session.getAttribute(LoginSuccessHandler.AVAILABLE_CONTEXTS_ATTRIBUTE);
         if (available == null) {
-            return "redirect:/logout";
+            throw new StaleAuthenticationException("No available CareTeams on session");
         }
         CareTeamOption chosen =
                 available.stream()

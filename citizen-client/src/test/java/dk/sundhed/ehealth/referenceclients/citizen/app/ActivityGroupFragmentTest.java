@@ -52,7 +52,6 @@ class ActivityGroupFragmentTest {
                 LocalDateTime.of(2026, 4, 15, 10, 0),
                 LocalDateTime.of(2026, 4, 15, 10, 30),
                 "Resolved",
-                "1/3",
                 "9",
                 "2",
                 "https://careplan.example/fhir/ServiceRequest/657450",
@@ -73,7 +72,7 @@ class ActivityGroupFragmentTest {
     @Test
     void unscheduledActivityOmitsSlotValues() {
         ActivityView activity = new ActivityView(
-                "Puls", null, null, "Adhoc", null, "9", "2",
+                "Puls", null, null, "Adhoc", "9", "2",
                 "https://careplan.example/fhir/ServiceRequest/657450",
                 "https://careplan.example/fhir/EpisodeOfCare/5");
 

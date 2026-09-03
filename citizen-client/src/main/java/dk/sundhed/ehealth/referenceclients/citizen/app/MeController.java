@@ -3,6 +3,7 @@ package dk.sundhed.ehealth.referenceclients.citizen.app;
 import dk.sundhed.ehealth.referenceclients.citizen.api.CitizenCarePlanAPI;
 import dk.sundhed.ehealth.referenceclients.citizen.api.CitizenEpisodeOfCareAPI;
 import dk.sundhed.ehealth.referenceclients.citizen.api.CitizenPatientAPI;
+import dk.sundhed.ehealth.referenceclients.common.infrastructure.fhir.PatientDemographics;
 import dk.sundhed.ehealth.referenceclients.common.infrastructure.security.EHealthContext;
 import org.hl7.fhir.r4.model.EpisodeOfCare;
 import org.hl7.fhir.r4.model.Patient;
@@ -20,8 +21,6 @@ import java.util.List;
  */
 @Controller
 public class MeController {
-
-    private static final String CPR_SYSTEM = "urn:oid:1.2.208.176.1.2";
 
     private final CitizenPatientAPI patientApi;
     private final CitizenEpisodeOfCareAPI episodeApi;
@@ -59,41 +58,13 @@ public class MeController {
 
         static CitizenView from(Patient patient) {
             return new CitizenView(
-                    displayName(patient),
-                    cpr(patient),
+                    PatientDemographics.displayName(patient),
+                    PatientDemographics.cpr(patient),
                     patient.getBirthDateElement() != null
                             ? patient.getBirthDateElement().getValueAsString()
                             : null,
                     patient.getGender() != null ? patient.getGender().getDisplay() : null,
-                    !patient.getAddress().isEmpty() ? patient.getAddress().get(0).getText() : null);
-        }
-
-        private static String displayName(Patient patient) {
-            return patient.getName().stream()
-                    .findFirst()
-                    .map(name -> {
-                        if (name.getText() != null && !name.getText().isBlank()) {
-                            return name.getText();
-                        }
-                        String given = name.getGivenAsSingleString();
-                        String family = name.getFamily();
-                        if (given != null && !given.isBlank() && family != null && !family.isBlank()) {
-                            return given + " " + family;
-                        }
-                        if (family != null && !family.isBlank()) {
-                            return family;
-                        }
-                        return given != null ? given : "";
-                    })
-                    .orElse("");
-        }
-
-        private static String cpr(Patient patient) {
-            return patient.getIdentifier().stream()
-                    .filter(identifier -> CPR_SYSTEM.equals(identifier.getSystem()))
-                    .map(identifier -> identifier.getValue() != null ? identifier.getValue() : "")
-                    .findFirst()
-                    .orElse("");
+                    !patient.getAddress().isEmpty() ? patient.getAddress().getFirst().getText() : null);
         }
     }
 }

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Wraps the {@code $createPatient} custom operation on {@code fut-patient}.
@@ -34,10 +35,66 @@ public class PatientAPI {
 
     private static final TokenClientParam RES_ID = new TokenClientParam("_id");
 
+    /**
+     * FUT-specific search parameter (see {@code SearchParameter/Patient/cprIdentifier} in the
+     * implementation guide) dedicated to the DK-Core CPR identifier, distinct from the generic
+     * {@code identifier} token search.
+     */
+    private static final TokenClientParam CPR_IDENTIFIER = new TokenClientParam("patientCPRIdentifier");
+
+    private static final Pattern CPR_SHAPE = Pattern.compile("\\d{10}");
+
+    /**
+     * Hard cap on citizen search results. Same rationale as {@code EpisodeOfCareAPI}'s and
+     * {@code PlanAPI}'s bounded single page: a name or CPR search can match broadly, and a single
+     * bounded page (no {@code next} walk) keeps the round-trip cheap and avoids a {@code _getpages}
+     * cursor expiring mid-walk. Callers surface {@link PatientSearchResult#truncated()} so the user
+     * knows to narrow the search rather than assuming the result set is exhaustive.
+     */
+    private static final int SEARCH_LIMIT = 50;
+
     private final FhirClientFactory fhirClientFactory;
 
     public PatientAPI(FhirClientFactory fhirClientFactory) {
         this.fhirClientFactory = fhirClientFactory;
+    }
+
+    /**
+     * A bounded page of citizen search results.
+     *
+     * @param patients  up to {@link #SEARCH_LIMIT} matches
+     * @param truncated true when the result was capped at {@link #SEARCH_LIMIT}, i.e. there may be
+     *                  more matches than shown
+     */
+    public record PatientSearchResult(List<Patient> patients, boolean truncated) {
+    }
+
+    /**
+     * Searches fut-patient for citizens matching {@code term}, server-side.
+     *
+     * <p>A 10-digit term is matched exactly as a CPR number. Anything else is matched as a
+     * prefix match on {@code Patient.name} (e.g. "Lars" matches "Larsen" but not "Nilars")
+     * not using {@code :contains}, which times out on the amount of patients.
+     *
+     * <p>Results are capped at {@link #SEARCH_LIMIT}; see that field for why a page walk is not
+     * used here.
+     *
+     * @param term    search text as typed by the clinician
+     * @param context security context carrying the clinician's access token
+     * @return a bounded page of matching patients
+     */
+    public PatientSearchResult searchPatients(String term, EHealthContext context) {
+        IGenericClient client = fhirClientFactory.createClient(FhirServer.PATIENT, context);
+        String trimmed = term.trim();
+
+        var query = client.search().forResource(Patient.class);
+        query = CPR_SHAPE.matcher(trimmed).matches()
+                ? query.where(CPR_IDENTIFIER.exactly().code(trimmed))
+                : query.where(Patient.NAME.matches().value(trimmed));
+
+        Bundle page = query.count(SEARCH_LIMIT).returnBundle(Bundle.class).execute();
+        List<Patient> patients = BundleUtil.extract(page, Patient.class);
+        return new PatientSearchResult(patients, patients.size() == SEARCH_LIMIT);
     }
 
     /**

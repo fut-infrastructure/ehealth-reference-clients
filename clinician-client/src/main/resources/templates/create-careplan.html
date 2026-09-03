@@ -59,7 +59,7 @@
 
     <form method="get" th:action="@{/episodes/{id}/care-plans/new(id=${episodeOfCareId})}">
         <div class="search-bar">
-            <input type="text" name="search" th:value="${search}" placeholder="Search by title..."/>
+            <input type="text" name="search" th:value="${search}" placeholder="Title starts with..."/>
             <label>
                 <input type="checkbox" name="withActivities" value="true" th:checked="${withActivities}"/>
                 Only plans with activities

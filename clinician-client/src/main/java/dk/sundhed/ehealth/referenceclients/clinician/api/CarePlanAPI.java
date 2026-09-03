@@ -19,7 +19,9 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Raw FHIR wrappers around the {@code CarePlan} resource on the {@link FhirServer#CARE_PLAN}
@@ -35,6 +37,7 @@ public class CarePlanAPI {
     private static final ReferenceClientParam EPISODE_OF_CARE =
             new ReferenceClientParam("episodeOfCare");
     private static final ReferenceClientParam CARE_TEAM = new ReferenceClientParam("care-team");
+    private static final ReferenceClientParam PATIENT = new ReferenceClientParam("patient");
 
     /**
      * Page size requested when walking the recency window. The careplan server caps the effective
@@ -127,15 +130,17 @@ public class CarePlanAPI {
      * after {@code since}, used to build the home roster of patients with recent care plans.
      *
      * <p>Why walk pages here when {@code EpisodeOfCareAPI} and {@code PlanAPI} deliberately fetch a
-     * single bounded page: the roster needs the <em>distinct patients</em> behind these plans, and
+     * single page? The roster needs the *distinct patients* behind these plans, and
      * the careplan server ignores {@code _sort} (results always come back ascending by id) and does
-     * not return a {@code total}. A patient with a single recent plan can therefore sit anywhere in
-     * the result, including the last page, so a single page would silently drop them. The
-     * {@code _lastUpdated} filter bounds the set to the recency window (a 30-day window on a busy
+     * not return a {@code total}.
+     * A patient with a single recent plan can therefore sit anywhere in
+     * the result, including the last page, so a single page would silently drop them.
+     * The {@code _lastUpdated} filter bounds the result to the set window (a 30-day window on a busy
      * load-test team is on the order of a few hundred plans across a handful of pages), which makes
-     * the walk safe. Walking the full 44k/71k catalogues would be unsafe because the {@code _getpages} cursor
-     * expires mid-walk. {@link #MAX_RECENT_PAGES} caps the worst case; because the order is ascending
-     * by id, hitting the cap drops the <em>newest</em> plans, so the cap is set generously above any
+     * the walk safe. Walking the full 44k/71k catalogues would be unwise because the {@code _getpages}
+     * page indicator expires mid-walk.
+     * {@link #MAX_RECENT_PAGES} caps the worst case; because the order is ascending
+     * by id, hitting the cap drops the *newest* plans, so the cap is set generously above any
      * realistic 30-day volume.
      *
      * @param context security context (must carry the care team)
@@ -165,6 +170,46 @@ public class CarePlanAPI {
     }
 
     /**
+     * Narrows a set of candidate patient ids down to the ones with at least one care plan
+     * on the current care team. Used to scope citizen search results to "my care team" without
+     * ever walking the full care-team catalogue (see {@link #findRecentCarePlansByCareTeam} for why
+     * that's not a good idea).
+     *
+     * <p>The search combines {@code care-team} with {@code patient} in a single bounded query
+     * (capped at {@link #RECENT_PAGE_SIZE}, so no page walk), it stays cheap regardless of catalogue
+     * size. One caveat worth knowing: if a handful of the candidates each have a large number of
+     * care plans, they can crowd others out of that single page and a true team member could be
+     * missed. Acceptable here because this only scopes a search result.
+     *
+     * @param context             security context (must carry the care team)
+     * @param candidatePatientIds bounded set of patient ids to check membership for
+     * @return the subset of {@code candidatePatientIds} that have a care plan on this care team
+     */
+    public Set<String> filterPatientIdsOnCareTeam(EHealthContext context, Set<String> candidatePatientIds) {
+        if (candidatePatientIds.isEmpty()) {
+            return Set.of();
+        }
+        IGenericClient client = fhirClientFactory.createClient(FhirServer.CARE_PLAN, context);
+
+        Bundle page = client.search()
+                .forResource(CarePlan.class)
+                .where(CARE_TEAM.hasId(context.careTeamId()))
+                .where(PATIENT.hasAnyOfIds(candidatePatientIds))
+                .count(RECENT_PAGE_SIZE)
+                .returnBundle(Bundle.class)
+                .execute();
+
+        Set<String> onTeam = new HashSet<>();
+        for (CarePlan carePlan : BundleUtil.extract(page, CarePlan.class)) {
+            String patientId = idPart(carePlan.getSubject());
+            if (patientId != null) {
+                onTeam.add(patientId);
+            }
+        }
+        return onTeam;
+    }
+
+    /**
      * Reads a {@link CarePlan} and includes its referenced activities in a single round-trip.
      *
      * <p>HAPI's {@code read()} does not honour {@code _include}, so this performs a search. The
@@ -181,8 +226,7 @@ public class CarePlanAPI {
      * @param context         security context (must carry the care team)
      * @return the raw search bundle containing the CarePlan and its activity resources
      */
-    public Bundle fetchCarePlanByIdWithActivities(
-            String carePlanId, String episodeOfCareId, EHealthContext context) {
+    public Bundle fetchCarePlanByIdWithActivities(String carePlanId, String episodeOfCareId, EHealthContext context) {
         EHealthContext episodeContext = context.withEpisodeOfCare(episodeOfCareId);
         IGenericClient client = fhirClientFactory.createClient(FhirServer.CARE_PLAN, episodeContext);
 
@@ -208,8 +252,7 @@ public class CarePlanAPI {
      * @param context           security context
      * @return the transaction response bundle
      */
-    public Bundle executeTransaction(
-            Bundle transactionBundle, String episodeOfCareId, EHealthContext context) {
+    public Bundle executeTransaction(Bundle transactionBundle, String episodeOfCareId, EHealthContext context) {
         EHealthContext episodeContext = context.withEpisodeOfCare(episodeOfCareId);
         IGenericClient client = fhirClientFactory.createClient(FhirServer.CARE_PLAN, episodeContext);
         return client.transaction().withBundle(transactionBundle).execute();
@@ -284,5 +327,13 @@ public class CarePlanAPI {
                         + (outcome.getResource() == null
                         ? "null"
                         : outcome.getResource().getClass().getSimpleName()));
+    }
+
+    private static String idPart(Reference ref) {
+        if (ref == null || ref.isEmpty()) {
+            return null;
+        }
+        String idPart = ref.getReferenceElement().getIdPart();
+        return idPart != null && !idPart.isBlank() ? idPart : null;
     }
 }

@@ -32,7 +32,6 @@ class WeeklyActivitiesMapperTest {
         assertThat(wednesday).hasSize(1);
         ActivityView activity = wednesday.getFirst();
         assertThat(activity.timingType()).isEqualTo("Resolved");
-        assertThat(activity.progress()).isEqualTo("1/3");
         assertThat(activity.carePlanId()).isEqualTo("9");
         assertThat(activity.episodeRef()).isEqualTo("EpisodeOfCare/5");
     }
@@ -79,15 +78,6 @@ class WeeklyActivitiesMapperTest {
         WeekView week = mapper.map(WEEK_START, bundle(nextWeek));
 
         assertThat(allScheduled(week)).isEmpty();
-    }
-
-    @Test
-    void progressIsNullWhenNoOccurrencesRequested() {
-        ProcedureRow row = resolved("ServiceRequest/1", "1", localDate(2026, 4, 15, 10, 0), null, null);
-
-        WeekView week = mapper.map(WEEK_START, bundle(row));
-
-        assertThat(allScheduled(week).getFirst().progress()).isNull();
     }
 
     private static List<ActivityView> allScheduled(WeekView week) {
