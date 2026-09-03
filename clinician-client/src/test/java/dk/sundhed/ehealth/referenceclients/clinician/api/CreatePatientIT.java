@@ -107,7 +107,7 @@ class CreatePatientIT {
                 .as("Patient must have at least one HumanName")
                 .isNotEmpty();
 
-        assertThat(patient.getName().get(0).getFamily())
+        assertThat(patient.getName().getFirst().getFamily())
                 .as("Patient's first HumanName must have a non-blank family name")
                 .isNotBlank();
 

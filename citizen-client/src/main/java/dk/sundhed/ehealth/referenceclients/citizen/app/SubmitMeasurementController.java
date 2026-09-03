@@ -124,9 +124,9 @@ public class SubmitMeasurementController {
         if (codeSource != null) {
             List<Coding> codings = codeSource.getCoding();
             if (!codings.isEmpty()) {
-                codeSystem = codings.get(0).getSystem();
-                codeCode = codings.get(0).getCode();
-                codeDisplay = codings.get(0).hasDisplay() ? codings.get(0).getDisplay() : codeSource.getText();
+                codeSystem = codings.getFirst().getSystem();
+                codeCode = codings.getFirst().getCode();
+                codeDisplay = codings.getFirst().hasDisplay() ? codings.getFirst().getDisplay() : codeSource.getText();
             }
         }
 

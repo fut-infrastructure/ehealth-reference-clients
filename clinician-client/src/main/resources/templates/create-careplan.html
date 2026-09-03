@@ -59,7 +59,8 @@
 
     <form method="get" th:action="@{/episodes/{id}/care-plans/new(id=${episodeOfCareId})}">
         <div class="search-bar">
-            <input type="text" name="search" th:value="${search}" placeholder="Title starts with..."/>
+            <input type="text" name="search" th:value="${search}" placeholder="Title starts with..."
+                   aria-label="Plan definition title"/>
             <label>
                 <input type="checkbox" name="withActivities" value="true" th:checked="${withActivities}"/>
                 Only plans with activities
@@ -82,9 +83,11 @@
             <tbody>
             <tr th:each="planDefinition, iter : ${planDefinitions}">
                 <td>
-                    <input type="radio" name="planDefinitionId" th:value="${planDefinition.planDefinitionId()}"
-                           th:id="${'pd-' + planDefinition.planDefinitionId()}" required
-                           th:checked="${iter.first}"/>
+                    <label>
+                        <input type="radio" name="planDefinitionId" th:value="${planDefinition.planDefinitionId()}"
+                               th:id="${'pd-' + planDefinition.planDefinitionId()}" required
+                               th:checked="${iter.first}"/>
+                    </label>
                 </td>
                 <td>
                     <label th:for="${'pd-' + planDefinition.planDefinitionId()}" th:text="${planDefinition.label()}">Plan</label>

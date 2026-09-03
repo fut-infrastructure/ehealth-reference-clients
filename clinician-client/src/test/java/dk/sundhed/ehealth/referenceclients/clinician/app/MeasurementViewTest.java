@@ -21,9 +21,9 @@ class MeasurementViewTest {
         List<MeasurementView> views = MeasurementView.from(outer);
 
         assertThat(views).extracting(MeasurementView::observationId).containsExactly("101", "100");
-        assertThat(views.get(0).date()).isEqualTo("2026-04-16");
-        assertThat(views.get(0).value()).isEqualTo("72 /min");
-        assertThat(views.get(0).status()).isEqualTo("final");
+        assertThat(views.getFirst().date()).isEqualTo("2026-04-16");
+        assertThat(views.getFirst().value()).isEqualTo("72 /min");
+        assertThat(views.getFirst().status()).isEqualTo("final");
     }
 
     @Test

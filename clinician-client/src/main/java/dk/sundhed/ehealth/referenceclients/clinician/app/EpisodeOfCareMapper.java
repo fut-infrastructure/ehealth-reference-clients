@@ -77,7 +77,7 @@ public class EpisodeOfCareMapper {
         if (result.episodes().isEmpty()) {
             throw new IllegalStateException("Cannot build detail view from empty SearchResult");
         }
-        EpisodeOfCare episode = result.episodes().get(0);
+        EpisodeOfCare episode = result.episodes().getFirst();
         Map<String, Condition> conditionsById = indexById(result.conditions());
         addContainedConditions(episode, conditionsById);
 
@@ -212,10 +212,7 @@ public class EpisodeOfCareMapper {
                 .map(diagnosisComponent -> {
                     Condition condition = resolveCondition(diagnosisComponent.getCondition(), conditionsById);
                     if (condition != null) {
-                        String label = labelFor(condition.getCode());
-                        if (label != null) {
-                            return label;
-                        }
+                        return labelFor(condition.getCode());
                     }
                     return null;
                 })

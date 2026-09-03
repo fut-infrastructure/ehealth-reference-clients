@@ -20,6 +20,8 @@
     --accent: #1e40af;
     --accent-strong: #1e3a8a;
     --border: rgba(0, 0, 0, 0.08);
+    --border-subtle: #eee;
+    --surface-muted: #fafafa;
     --danger: #b91c1c;
     --success: #15803d;
 

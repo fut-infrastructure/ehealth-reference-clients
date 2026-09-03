@@ -192,7 +192,7 @@ public class CitizenCarePlanAPI {
 
     private static String codeableConceptCodeOf(Parameters.ParametersParameterComponent part) {
         if (part.getValue() instanceof CodeableConcept codeableConcept && !codeableConcept.getCoding().isEmpty()) {
-            return codeableConcept.getCoding().get(0).getCode();
+            return codeableConcept.getCoding().getFirst().getCode();
         }
         return stringOf(part);
     }
