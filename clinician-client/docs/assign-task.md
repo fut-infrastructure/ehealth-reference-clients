@@ -51,8 +51,9 @@ sequenceDiagram
 
 - The platform's `task-category` codeset has no code that means "please perform a measurement";
   every code is a clinician-facing assessment reason. The client reuses the closest fit,
-  `MeasurementForAssessment`, and puts the real citizen-facing instruction in `Task.description`
-  instead ("Submit your daily measurement").
+  `MeasurementForAssessment`, and puts the owning CarePlan's title in `Task.description` instead, so
+  a citizen with several concurrent tasks can tell them apart on the task list (falls back to the
+  bare CarePlan id when the CarePlan has no title).
 - Applying a PlanDefinition (`$apply`) never creates a citizen-owned Task by itself. It only creates
   the CarePlan and its ServiceRequest/Appointment activities. This endpoint exists so a clinician can
   give the citizen something to act on outside that automatic schedule.

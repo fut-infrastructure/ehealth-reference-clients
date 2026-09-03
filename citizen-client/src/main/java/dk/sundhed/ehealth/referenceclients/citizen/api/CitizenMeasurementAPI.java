@@ -51,6 +51,33 @@ public class CitizenMeasurementAPI {
     }
 
     /**
+     * Marks a {@link ServiceRequest} activity {@code completed} directly, with no Observation
+     * submitted. Used for activities whose {@code ActivityDefinition.code} isn't in the
+     * {@code observation-codes} value set (see {@code ObservationCodes} in the citizen app package)
+     * - e.g. a plain exercise like "do 10 pushups" - where {@code $submit-measurement} would reject
+     * the code.
+     *
+     * <p>The careplan server doesn't expose a PATCH operation for {@code ServiceRequest}, so this reads the
+     * current resource and PUTs it back with the status flipped, mirroring {@code
+     * CarePlanAPI.changeCarePlanStatus} on the clinician side. {@code completed} is a terminal
+     * status; the careplan server refuses a PUT moving it back to {@code active}.
+     *
+     * @param serviceRequestUrl fully-qualified ServiceRequest URL
+     * @param episodeOfCareId   fully-qualified EpisodeOfCare URL owning this activity; the careplan
+     *                          server denies a ServiceRequest write unless the token carries it
+     * @param context           citizen security context (patient); episode is added internally
+     */
+    public void completeServiceRequest(
+            String serviceRequestUrl, String episodeOfCareId, EHealthContext context) {
+        EHealthContext episodeContext = context.withEpisodeOfCare(episodeOfCareId);
+        IGenericClient client = fhirClientFactory.createClient(FhirServer.CARE_PLAN, episodeContext);
+        ServiceRequest serviceRequest =
+                client.read().resource(ServiceRequest.class).withUrl(serviceRequestUrl).execute();
+        serviceRequest.setStatus(ServiceRequest.ServiceRequestStatus.COMPLETED);
+        client.update().resource(serviceRequest).execute();
+    }
+
+    /**
      * Invokes {@code POST /$submit-measurement} on the measurement server with the supplied bundle
      * of observations.
      *

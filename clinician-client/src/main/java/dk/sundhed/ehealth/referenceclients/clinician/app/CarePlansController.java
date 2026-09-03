@@ -120,13 +120,14 @@ public class CarePlansController {
                         "CarePlan " + carePlanId + " not found"));
 
         String patientId = carePlan.getSubject().getReference();
+        String description = carePlan.hasTitle() ? carePlan.getTitle() : carePlanId;
 
         taskAPI.createTaskForPatient(
                 patientId,
                 qualifiedEoc,
                 qualifiedId,
                 context.careTeamId(),
-                "Submit your daily measurement",
+                description,
                 context);
 
         return "redirect:/episodes/" + episodeOfCareId + "/care-plans/" + carePlanId;

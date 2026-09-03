@@ -23,6 +23,11 @@ import jakarta.annotation.Nullable;
  * @param slotEnd                  ISO local datetime of the scheduled slot end; null for Adhoc
  * @param value                    numeric value entered by the citizen (null on GET)
  * @param unit                     unit string entered by the citizen (null on GET)
+ * @param measurable               true when {@code codeSystem}/{@code codeCode} is in the
+ *                                 {@code observation-codes} value set, i.e. {@code $submit-measurement}
+ *                                 will accept an Observation for this activity. False means the form
+ *                                 offers a plain "mark done" completion instead (see
+ *                                 {@link ObservationCodes}).
  */
 public record SubmitMeasurementFormView(
         String serviceRequestRef,
@@ -37,5 +42,6 @@ public record SubmitMeasurementFormView(
         @Nullable String slotStart,
         @Nullable String slotEnd,
         @Nullable String value,
-        @Nullable String unit) {
+        @Nullable String unit,
+        boolean measurable) {
 }

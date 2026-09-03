@@ -100,14 +100,15 @@ public class TaskAPI {
      * <p>The {@code task-category} codes ({@code http://ehealth.sundhed.dk/cs/task-category}) are
      * all clinician-facing assessment reasons.
      * This reuses the closest fit, {@code MeasurementForAssessment},
-     * and puts the actual citizen-facing instruction in {@code description}.
+     * and puts the CarePlan's own title in {@code description}, so a citizen with several
+     * concurrent tasks can tell them apart in the task list.
      *
      * @param patientId       fully-qualified Patient URL (becomes both {@code for} and
      *                        {@code owner}, matching what the citizen app actually searches on)
      * @param episodeOfCareId fully-qualified EpisodeOfCare URL
      * @param carePlanId      fully-qualified CarePlan URL this task fulfils
      * @param careTeamId      fully-qualified CareTeam URL responsible for the task
-     * @param description     citizen-facing instruction text
+     * @param description     citizen-facing label, normally the owning CarePlan's title
      * @param context         security context, scoped to the episode internally
      */
     public void createTaskForPatient(
