@@ -72,19 +72,24 @@ public class CarePlanAPI {
      * resulting {@link CarePlan} (or a {@link Bundle} when {@code Prefer: return=representation}
      * is honoured).
      *
+     * <p>{@code $apply} takes no parameter for a title (its {@code OperationDefinition} declares
+     * only {@code episodeOfCare}) and does not copy the source PlanDefinition's title onto the
+     * CarePlan it creates. {@link #backfillTitle} applies title immediately after creation.
+     *
      * @param planDefinitionId fully-qualified PlanDefinition URL
      * @param episodeOfCareId  fully-qualified EpisodeOfCare URL
      * @param context          security context
-     * @return the newly-created draft {@link CarePlan}
+     * @return the newly-created draft {@link CarePlan}, with {@code title} backfilled if it was
+     *         missing
      */
     public CarePlan applyPlanDefinition(
             String planDefinitionId, String episodeOfCareId, EHealthContext context) {
-        IGenericClient client = fhirClientFactory.createClient(FhirServer.PLAN, context);
+        IGenericClient planClient = fhirClientFactory.createClient(FhirServer.PLAN, context);
 
         Parameters parameters = new Parameters();
         parameters.addParameter().setName("episodeOfCare").setValue(new Reference(episodeOfCareId));
 
-        MethodOutcome outcome = client
+        MethodOutcome outcome = planClient
                 .operation()
                 .onInstance(new IdType(planDefinitionId))
                 .named("apply")
@@ -94,7 +99,41 @@ public class CarePlanAPI {
                 .withAdditionalHeader("Prefer", "return=representation")
                 .execute();
 
-        return extractCarePlan(outcome);
+        CarePlan carePlan = extractCarePlan(outcome);
+        return backfillTitle(carePlan, planDefinitionId, episodeOfCareId, context, planClient);
+    }
+
+    /**
+     * Sets {@code carePlan.title} from the source {@link PlanDefinition} and persists it, when
+     * {@code $apply} left the CarePlan without one (see {@link #applyPlanDefinition}). No-op when
+     * the CarePlan already has a title, or when the PlanDefinition has neither a title nor a name
+     * to fall back to.
+     */
+    private CarePlan backfillTitle(
+            CarePlan carePlan,
+            String planDefinitionId,
+            String episodeOfCareId,
+            EHealthContext context,
+            IGenericClient planClient) {
+        if (carePlan.hasTitle()) {
+            return carePlan;
+        }
+        PlanDefinition planDefinition =
+                planClient.read().resource(PlanDefinition.class).withUrl(planDefinitionId).execute();
+        String title = planDefinition.hasTitle() ? planDefinition.getTitle()
+                : planDefinition.hasName() ? planDefinition.getName() : null;
+        if (title == null) {
+            return carePlan;
+        }
+        carePlan.setTitle(title);
+
+        EHealthContext episodeContext = context.withEpisodeOfCare(episodeOfCareId);
+        IGenericClient carePlanClient = fhirClientFactory.createClient(FhirServer.CARE_PLAN, episodeContext);
+        carePlanClient.update()
+                .resource(carePlan)
+                .prefer(PreferReturnEnum.MINIMAL)
+                .execute();
+        return carePlan;
     }
 
     /**

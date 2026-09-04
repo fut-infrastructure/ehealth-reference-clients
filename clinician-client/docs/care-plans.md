@@ -29,8 +29,8 @@ sequenceDiagram
     CreateCarePlanController -->> Browser: PlanDefinition picker form
     Browser ->> CreateCarePlanController: POST /episodes/{eoc}/care-plans (planDefinitionId)
     CreateCarePlanController ->> CarePlanAPI: applyPlanDefinition(planDefinitionId, eoc, context)
-    CarePlanAPI ->> plan: POST /PlanDefinition/{id}/$apply
-    plan -->> CarePlanAPI: Draft CarePlan + activities
+    CarePlanAPI ->> careplan: POST /PlanDefinition/{id}/$apply
+    careplan -->> CarePlanAPI: Draft CarePlan + activities
     CarePlanAPI -->> CreateCarePlanController: CarePlan
     CreateCarePlanController -->> Browser: Redirect to /episodes/{eoc}/care-plans/{id}
 ```

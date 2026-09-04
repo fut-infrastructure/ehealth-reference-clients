@@ -68,8 +68,8 @@ public class SubmitMeasurementController {
         ServiceRequest serviceRequest = measurementAPI.readServiceRequest(serviceRequestUrl, readContext);
         ActivityDefinition activityDefinition = null;
         if (!serviceRequest.getInstantiatesCanonical().isEmpty()) {
-            String adUrl = serviceRequest.getInstantiatesCanonical().getFirst().getValue();
-            activityDefinition = measurementAPI.readActivityDefinition(adUrl, readContext);
+            String activityDefinitionUrl = serviceRequest.getInstantiatesCanonical().getFirst().getValue();
+            activityDefinition = measurementAPI.readActivityDefinition(activityDefinitionUrl, readContext);
         }
 
         model.addAttribute("form", toFormView(serviceRequest, activityDefinition, episodeRefParam, timingTypeParam, srVersionIdParam, slotStartParam, slotEndParam));

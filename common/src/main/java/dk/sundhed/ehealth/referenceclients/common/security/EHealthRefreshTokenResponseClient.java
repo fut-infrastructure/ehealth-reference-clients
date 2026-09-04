@@ -37,7 +37,7 @@ public class EHealthRefreshTokenResponseClient
 
     @Override
     public OAuth2AccessTokenResponse getTokenResponse(EHealthRefreshTokenGrantRequest request) {
-        return delegate.getTokenResponse(request);
+        return delegate.getTokenResponse(request); // Fun place for a breakpoint to show clinician and citizen token as it updates!
     }
 
     private MultiValueMap<String, String> contextParameters(OAuth2RefreshTokenGrantRequest request) {

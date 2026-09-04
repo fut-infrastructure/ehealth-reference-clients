@@ -55,12 +55,14 @@ public class TasksController {
             @RequestParam(value = "patient", required = false) String patientId,
             EHealthContext context,
             Model model) {
-        String qualifiedEoc = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
+        String qualifiedEpisodeOfCare = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
         String qualifiedPatient = qualifiedPatient(patientId);
-        EHealthContext taskContext = context.withPatient(qualifiedPatient).withEpisodeOfCare(qualifiedEoc);
-        List<Task> tasks = taskAPI.findTasksByEpisode(qualifiedEoc, taskContext);
+        EHealthContext taskContext = context.withPatient(qualifiedPatient).withEpisodeOfCare(qualifiedEpisodeOfCare);
+
+        List<Task> tasks = taskAPI.findTasksByEpisode(qualifiedEpisodeOfCare, taskContext);
         Map<String, MeasurementView> byObservation =
-                measurementsByObservation(qualifiedEoc, qualifiedPatient, context);
+                measurementsByObservation(qualifiedEpisodeOfCare, qualifiedPatient, context);
+
         model.addAttribute("episodeId", episodeId);
         model.addAttribute("patientId", patientId);
         model.addAttribute("tasks", TaskView.from(tasks, baseUrlResolver, byObservation));
@@ -73,12 +75,12 @@ public class TasksController {
      * (just without the inline reading).
      */
     private Map<String, MeasurementView> measurementsByObservation(
-            String qualifiedEoc, String qualifiedPatient, EHealthContext context) {
+            String qualifiedEpisodeOfCare, String qualifiedPatient, EHealthContext context) {
         Date start = Date.from(
                 LocalDate.now().minusDays(MEASUREMENT_LOOKBACK_DAYS).atStartOfDay(ZONE).toInstant());
         try {
             Bundle outer = measurementAPI.searchMeasurements(
-                    qualifiedEoc, start, context.withPatient(qualifiedPatient));
+                    qualifiedEpisodeOfCare, start, context.withPatient(qualifiedPatient));
             return MeasurementView.byObservationId(MeasurementView.from(outer));
         } catch (ForbiddenOperationException forbiddenOperationException) {
             return Map.of();
@@ -92,14 +94,14 @@ public class TasksController {
             @RequestParam("target") String target,
             @RequestParam(value = "patient", required = false) String patientId,
             EHealthContext context) {
-        String qualifiedEoc = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
+        String qualifiedEpisodeOfCare = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
         String qualifiedTask = baseUrlResolver.createId(FhirServer.TASK, Task.class, taskId);
         Task.TaskStatus status = Task.TaskStatus.fromCode(target);
         if (status == null) {
             throw new IllegalArgumentException("Unsupported Task status: " + target);
         }
         EHealthContext taskContext =
-                context.withPatient(qualifiedPatient(patientId)).withEpisodeOfCare(qualifiedEoc);
+                context.withPatient(qualifiedPatient(patientId)).withEpisodeOfCare(qualifiedEpisodeOfCare);
         taskAPI.changeTaskStatus(qualifiedTask, status, taskContext);
 
         String tasksPage = "redirect:/episodes/" + episodeId + "/tasks";

@@ -5,7 +5,7 @@ weekly view, or for an unscheduled activity from the "Without time" section on t
 
 ## User flow
 
-- Citizen clicks "Submit" (scheduled) or "Submit reading" (unscheduled) on an activity card.
+- Citizen clicks "Submit" (scheduled) on an activity card.
 - `GET /measurements/new?serviceRequest=...` reads the underlying `ServiceRequest` and its
   `ActivityDefinition` to pre-fill the measurement code and label, and renders the submission form.
 - If the resolved code isn't in the `observation-codes` value set (see `ObservationCodes`) - e.g. a
