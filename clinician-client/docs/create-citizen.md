@@ -29,8 +29,8 @@ sequenceDiagram
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/CitizensController.java`: `GET /citizens/new` renders the form; `POST /citizens` invokes the operation and redirects to the resulting citizen, or re-renders the form on a not-found
-- `clinician-client/src/main/java/.../clinician/api/PatientAPI.java`: `createPatientFromCpr(cpr, context)` builds the `Parameters` body and calls `$createPatient`; throws `ResourceNotFoundException` on a CPR miss
+- `clinician-client/src/main/java/.../clinician/controller/CitizensController.java`: `GET /citizens/new` renders the form; `POST /citizens` invokes the operation and redirects to the resulting citizen, or re-renders the form on a not-found
+- `clinician-client/src/main/java/.../clinician/fhir/PatientAPI.java`: `createPatientFromCpr(cpr, context)` builds the `Parameters` body and calls `$createPatient`; throws `ResourceNotFoundException` on a CPR miss
 - `clinician-client/src/main/resources/templates/citizens/new.html`: single-field CPR form with `pattern="\d{10}"` client-side validation
 
 ## FHIR operations

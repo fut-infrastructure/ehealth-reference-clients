@@ -17,14 +17,14 @@ to the clinician's own CareTeam.
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/HomeController.java`: `GET /` branches on
+- `clinician-client/src/main/java/.../clinician/controller/HomeController.java`: `GET /` branches on
   whether `term` is present; `searchRows(...)` runs the search-then-narrow sequence below
-- `clinician-client/src/main/java/.../clinician/api/PatientAPI.java`:
+- `clinician-client/src/main/java/.../clinician/fhir/PatientAPI.java`:
   `searchPatients(term, context)` - a 10-digit term matches CPR exactly via the
   `patientCPRIdentifier` search parameter, anything else matches `Patient.NAME` as a prefix match
   (`.matches()`, not `.contains()`); returns a `PatientSearchResult` capped at 50 with a `truncated`
   flag
-- `clinician-client/src/main/java/.../clinician/api/CarePlanAPI.java`:
+- `clinician-client/src/main/java/.../clinician/fhir/CarePlanAPI.java`:
   `filterPatientIdsOnCareTeam(context, candidatePatientIds)` - one bounded `CarePlan` search
   combining `care-team` and `patient` (any of the candidate ids), used to keep only the citizens
   actually on the clinician's team

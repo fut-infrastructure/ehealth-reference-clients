@@ -19,7 +19,7 @@ key difference is client type:
 
 Both apps allow anonymous access to only a few routes: `/`, static assets, `/actuator/**`, the
 OAuth2 endpoints, and `/error`. Every other route needs an authenticated session
-(`SecurityConfiguration` in each app's `infrastructure/` package).
+(`SecurityConfiguration` in each app's `security/` package).
 
 ## Why the token needs to change shape
 
@@ -106,12 +106,12 @@ and for clinician-client, the selected CareTeam too. Restarting an app wipes all
 browser can still present a valid `JSESSIONID` cookie for a session the server no longer knows
 about.
 
-- `StaleAuthenticationException` (`common/.../security/StaleAuthenticationException.java`) is
+- `StaleAuthenticationException` (`common/.../exceptions/StaleAuthenticationException.java`) is
   thrown whenever that gap shows up: no authorized client found
   (`DefaultEHealthUser.obtainAccessToken`), no CareTeam selected
   (`EHealthContextArgumentResolver`), or a missing or invalid OIDC token
   (`CitizenEHealthContextArgumentResolver`).
-- `ReAuthenticationAdvice` (`common/.../web/ReAuthenticationAdvice.java`) catches that exception,
+- `ReAuthenticationAdvice` (`common/.../config/spring/ReAuthenticationAdvice.java`) catches that exception,
   along with Spring Security's own `ClientAuthorizationRequiredException` and
   `OAuth2AuthorizationException`. It shows a plain "your session expired" page
   (`error/session-expired.html`) instead of silently redirecting into Spring Security's default

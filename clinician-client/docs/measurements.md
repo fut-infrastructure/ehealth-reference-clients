@@ -30,11 +30,11 @@ sequenceDiagram
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/MeasurementsController.java`: `GET
+- `clinician-client/src/main/java/.../clinician/controller/MeasurementsController.java`: `GET
   /episodes/{id}/measurements` fetches and filters the list
-- `clinician-client/src/main/java/.../clinician/api/MeasurementAPI.java`:
+- `clinician-client/src/main/java/.../clinician/fhir/MeasurementAPI.java`:
   `searchMeasurements(episodeOfCareId, start, context)` calls `$search-measurements-bundle-limit`
-- `clinician-client/src/main/java/.../clinician/app/MeasurementView.java`: flattens the outer/inner
+- `clinician-client/src/main/java/.../clinician/view/MeasurementView.java`: flattens the outer/inner
   bundle structure into one row per `Observation`, sorted newest first; `matches(query)` implements
   the free-text filter
 - `clinician-client/src/main/resources/templates/measurements.html`: the list page with the search

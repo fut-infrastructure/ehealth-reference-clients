@@ -20,18 +20,18 @@ weekly view, or for an unscheduled activity from the "Without time" section on t
 
 ## Key files
 
-- `citizen-client/src/main/java/.../citizen/app/SubmitMeasurementController.java`: `GET
+- `citizen-client/src/main/java/.../citizen/controller/SubmitMeasurementController.java`: `GET
   /measurements/new` resolves the `ServiceRequest`/`ActivityDefinition` into a form view; `POST
   /measurements/new` builds the `Observation` and submits it; `POST /measurements/complete` marks a
   non-measurable activity done directly
-- `citizen-client/src/main/java/.../citizen/api/CitizenMeasurementAPI.java`:
+- `citizen-client/src/main/java/.../citizen/fhir/CitizenMeasurementAPI.java`:
   `readServiceRequest(url, context)` (careplan server), `readActivityDefinition(url, context)`
   (plan server), `submitMeasurement(bundle, context)` (measurement server),
   `completeServiceRequest(url, episodeOfCareId, context)` (careplan server, read + PUT)
-- `citizen-client/src/main/java/.../citizen/app/SubmitMeasurementFormView.java`: the form-backing
+- `citizen-client/src/main/java/.../citizen/view/SubmitMeasurementFormView.java`: the form-backing
   record (code, patient/episode refs, timing info, the citizen's typed value and unit, and
   `measurable`)
-- `citizen-client/src/main/java/.../citizen/app/ObservationCodes.java`: static mirror of the
+- `citizen-client/src/main/java/.../citizen/models/ObservationCodes.java`: static mirror of the
   `observation-codes` value set, used to decide `measurable`
 - `citizen-client/src/main/resources/templates/submit-measurement.html`: the submission form, or a
   "Mark done" button when the activity isn't measurable

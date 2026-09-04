@@ -36,13 +36,13 @@ sequenceDiagram
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/TasksController.java`: `GET
+- `clinician-client/src/main/java/.../clinician/controller/TasksController.java`: `GET
   /episodes/{id}/tasks` lists tasks and joins them to measurements; `POST
   /episodes/{id}/tasks/{taskId}/status` changes a task's status
-- `clinician-client/src/main/java/.../clinician/api/TaskAPI.java`:
+- `clinician-client/src/main/java/.../clinician/fhir/TaskAPI.java`:
   `findTasksByEpisode(episodeOfCareId, context)`; `changeTaskStatus(taskId, target, context)` issues
   a JSON Patch `replace /status`
-- `clinician-client/src/main/java/.../clinician/app/TaskView.java`: one row per task, resolving
+- `clinician-client/src/main/java/.../clinician/view/TaskView.java`: one row per task, resolving
   `Task.focus` to the matching `MeasurementView` when the focus is an `Observation`
 - `clinician-client/src/main/resources/templates/tasks.html`: the task list with inline status forms
 

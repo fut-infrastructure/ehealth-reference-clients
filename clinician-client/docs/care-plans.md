@@ -37,11 +37,11 @@ sequenceDiagram
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/CreateCarePlanController.java`: `GET /episodes/{eoc}/care-plans/new` lists PlanDefinitions; `POST /episodes/{eoc}/care-plans` calls `applyPlanDefinition` and redirects
-- `clinician-client/src/main/java/.../clinician/app/CarePlansController.java`: `GET /episodes/{eoc}/care-plans/{id}` fetches the plan plus activities and renders the detail view
-- `clinician-client/src/main/java/.../clinician/api/PlanAPI.java`: `findPublishedPlanDefinitions(context)` searches `status=active` on `FhirServer.PLAN`, capped at 100
-- `clinician-client/src/main/java/.../clinician/api/CarePlanAPI.java`: `applyPlanDefinition(planDefinitionId, episodeOfCareId, context)` calls the instance-level `$apply`; `fetchCarePlanByIdWithActivities(id, eoc, context)` searches with `_include=CarePlan:activity-reference`
-- `clinician-client/src/main/java/.../clinician/app/CarePlanMapper.java`: `toDetailView(...)` groups activities by type; `toOptions(...)` builds the PlanDefinition picker list; `extractEpisodeOfCareId(...)` reads the mandatory `workflow-episodeOfCare` extension
+- `clinician-client/src/main/java/.../clinician/controller/CreateCarePlanController.java`: `GET /episodes/{eoc}/care-plans/new` lists PlanDefinitions; `POST /episodes/{eoc}/care-plans` calls `applyPlanDefinition` and redirects
+- `clinician-client/src/main/java/.../clinician/controller/CarePlansController.java`: `GET /episodes/{eoc}/care-plans/{id}` fetches the plan plus activities and renders the detail view
+- `clinician-client/src/main/java/.../clinician/fhir/PlanAPI.java`: `findPublishedPlanDefinitions(context)` searches `status=active` on `FhirServer.PLAN`, capped at 100
+- `clinician-client/src/main/java/.../clinician/fhir/CarePlanAPI.java`: `applyPlanDefinition(planDefinitionId, episodeOfCareId, context)` calls the instance-level `$apply`; `fetchCarePlanByIdWithActivities(id, eoc, context)` searches with `_include=CarePlan:activity-reference`
+- `clinician-client/src/main/java/.../clinician/mappers/CarePlanMapper.java`: `toDetailView(...)` groups activities by type; `toOptions(...)` builds the PlanDefinition picker list; `extractEpisodeOfCareId(...)` reads the mandatory `workflow-episodeOfCare` extension
 - `clinician-client/src/main/resources/templates/create-careplan.html`: PlanDefinition picker form
 - `clinician-client/src/main/resources/templates/careplan-detail.html`: detail page with activity tables, Activate button, and status-change dropdown
 

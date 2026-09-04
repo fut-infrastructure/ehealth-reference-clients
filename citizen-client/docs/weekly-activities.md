@@ -29,11 +29,11 @@ sequenceDiagram
 
 ## Key files
 
-- `citizen-client/src/main/java/.../citizen/app/HomeController.java`: `GET /`; builds inline citizen context from OIDC `user_id` claim; calls `getPatientProcedures` for `[Monday, Sunday]`; passes `WeekView` to the template
-- `citizen-client/src/main/java/.../citizen/api/CitizenCarePlanAPI.java`: `getPatientProcedures(startDate, endDate, context)` calls `POST /fhir/$get-patient-procedures` and extracts `ProcedureRow` records from the response `Bundle`
-- `citizen-client/src/main/java/.../citizen/api/ProcedureRow.java`: record holding the per-slot fields: CarePlan, ServiceRequest, Activity, ResolvedTimingStart/End, TimingType, OccurrencesRequested, TotalSubmitted
-- `citizen-client/src/main/java/.../citizen/app/WeeklyActivitiesMapper.java`: buckets `Resolved`/`Extra` rows by date into a `WeekView`; routes `Unresolved`/`Adhoc` rows to the `unscheduled` list
-- `citizen-client/src/main/java/.../citizen/app/WeekView.java`: seven `DayView`s plus the `unscheduled` list
+- `citizen-client/src/main/java/.../citizen/controller/HomeController.java`: `GET /`; builds inline citizen context from OIDC `user_id` claim; calls `getPatientProcedures` for `[Monday, Sunday]`; passes `WeekView` to the template
+- `citizen-client/src/main/java/.../citizen/fhir/CitizenCarePlanAPI.java`: `getPatientProcedures(startDate, endDate, context)` calls `POST /fhir/$get-patient-procedures` and extracts `ProcedureRow` records from the response `Bundle`
+- `citizen-client/src/main/java/.../citizen/models/ProcedureRow.java`: record holding the per-slot fields: CarePlan, ServiceRequest, Activity, ResolvedTimingStart/End, TimingType, OccurrencesRequested, TotalSubmitted
+- `citizen-client/src/main/java/.../citizen/mappers/WeeklyActivitiesMapper.java`: buckets `Resolved`/`Extra` rows by date into a `WeekView`; routes `Unresolved`/`Adhoc` rows to the `unscheduled` list
+- `citizen-client/src/main/java/.../citizen/view/WeekView.java`: seven `DayView`s plus the `unscheduled` list
 - `citizen-client/src/main/resources/templates/home.html`: authenticated and unauthenticated branches; 7-column week grid and "Without time" section
 - `citizen-client/src/main/resources/templates/fragments/activity-group.html`: reusable per-day activity card fragment
 

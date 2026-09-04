@@ -33,10 +33,10 @@ sequenceDiagram
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/CarePlansController.java`: `POST
+- `clinician-client/src/main/java/.../clinician/controller/CarePlansController.java`: `POST
   /episodes/{eoc}/care-plans/{id}/tasks` reads the care plan to get its subject (patient), then
   calls `TaskAPI.createTaskForPatient`
-- `clinician-client/src/main/java/.../clinician/api/TaskAPI.java`:
+- `clinician-client/src/main/java/.../clinician/fhir/TaskAPI.java`:
   `createTaskForPatient(patientId, episodeOfCareId, carePlanId, careTeamId, description, context)`
   builds and creates the `Task`
 - `clinician-client/src/main/resources/templates/careplan-detail.html`: the "Assign task" button

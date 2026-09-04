@@ -78,18 +78,16 @@ scoped bearer token on each FHIR call, and how session expiry is handled.
 
 ## FHIR layering
 
-Each app's `infrastructure/fhir/` tree splits into two parts, with one rule: keep FHIR calls and
-clinical logic apart.
-
-- `api/` holds interfaces that wrap raw FHIR calls. Each method is one FHIR operation: a search, a
-  read, a create, a custom operation. No business logic and no convenience composition lives here.
-  A reader should be able to scan this layer in one sitting and see "FHIR, plus auth" and nothing
-  more.
-- `service/` holds the HAPI implementations of those interfaces.
+Each module's `fhir/` package wraps raw FHIR calls, with one rule: keep FHIR calls and clinical
+logic apart. Each class there is one FHIR-facing concern: a search, a read, a create, a custom
+operation, or FHIR-adjacent infrastructure (client factory, bundle helpers). No business logic
+and no convenience composition lives here. A reader should be able to scan this layer in one
+sitting and see "FHIR, plus auth" and nothing more.
 
 Business logic, such as finding the top parent of an organization hierarchy, grouping activities
-by week, or mapping a FHIR `EpisodeOfCare` into a display record, lives in `app/` instead, in
-mappers and application services that call the raw `api/` methods and transform the results.
+by week, or mapping a FHIR `EpisodeOfCare` into a display record, lives in `mappers/` and
+`controller/` instead, calling the raw `fhir/` classes and transforming the results into `view/`
+records.
 
 This split is deliberate. A vendor reading the code should find it easy to locate where FHIR
 calls happen, and just as easy to find where the clinical logic happens, without the two being

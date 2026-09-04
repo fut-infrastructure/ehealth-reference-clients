@@ -41,12 +41,12 @@ sequenceDiagram
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/EpisodesController.java`: `GET /episodes` (list) and `GET /episodes/{id}` (detail); resolves Patient, Organization, and CareTeam references via follow-up calls, then adds the measurement and task previews
-- `clinician-client/src/main/java/.../clinician/api/EpisodeOfCareAPI.java`: `findPlannedAndActiveEpisodesByTeam(context)` (single bounded page, `_include=EpisodeOfCare:condition`); `fetchEpisodeOfCareById(id, context)` (direct read scoped to the episode, with per-id Condition reads)
-- `clinician-client/src/main/java/.../clinician/api/CarePlanAPI.java`: `findCarePlansByEpisode(episodeId, context)` used on the detail page
-- `clinician-client/src/main/java/.../clinician/api/MeasurementAPI.java`: `searchMeasurements(...)` supplies the 90-day recent-measurement preview
-- `clinician-client/src/main/java/.../clinician/api/TaskAPI.java`: `findTasksByEpisode(...)` supplies the task preview
-- `clinician-client/src/main/java/.../clinician/app/EpisodeOfCareMapper.java`: maps `SearchResult` into `PatientEpisodesView` / `EpisodeOfCareDetailView`
+- `clinician-client/src/main/java/.../clinician/controller/EpisodesController.java`: `GET /episodes` (list) and `GET /episodes/{id}` (detail); resolves Patient, Organization, and CareTeam references via follow-up calls, then adds the measurement and task previews
+- `clinician-client/src/main/java/.../clinician/fhir/EpisodeOfCareAPI.java`: `findPlannedAndActiveEpisodesByTeam(context)` (single bounded page, `_include=EpisodeOfCare:condition`); `fetchEpisodeOfCareById(id, context)` (direct read scoped to the episode, with per-id Condition reads)
+- `clinician-client/src/main/java/.../clinician/fhir/CarePlanAPI.java`: `findCarePlansByEpisode(episodeId, context)` used on the detail page
+- `clinician-client/src/main/java/.../clinician/fhir/MeasurementAPI.java`: `searchMeasurements(...)` supplies the 90-day recent-measurement preview
+- `clinician-client/src/main/java/.../clinician/fhir/TaskAPI.java`: `findTasksByEpisode(...)` supplies the task preview
+- `clinician-client/src/main/java/.../clinician/mappers/EpisodeOfCareMapper.java`: maps `SearchResult` into `PatientEpisodesView` / `EpisodeOfCareDetailView`
 - `clinician-client/src/main/resources/templates/episodes.html`: episode roster grouped by patient
 - `clinician-client/src/main/resources/templates/episode-detail.html`: detail page including inline status-change form, care-plan summary list, measurement preview, and task preview
 

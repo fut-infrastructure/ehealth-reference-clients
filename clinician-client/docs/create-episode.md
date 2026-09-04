@@ -28,10 +28,10 @@ sequenceDiagram
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/CreateEpisodeController.java`: `GET /episodes/new?patient=` renders the form; `POST /episodes` builds a patient-scoped context, calls `createEpisode`, and redirects
-- `clinician-client/src/main/java/.../clinician/api/EpisodeOfCareAPI.java`: `createEpisode(transactionBundle, context)` wraps the bundle in a `Parameters.episodeOfCareAndProvenances` parameter and calls `POST /$create-episode-of-care`
-- `clinician-client/src/main/java/.../clinician/app/EpisodeOfCareMapper.java`: `toCreateEpisodeTransaction(patientId, conditionOption, context)` builds the transaction bundle
-- `clinician-client/src/main/java/.../clinician/app/ConditionCodeOption.java`: hardcoded list of five SKS codes (DE11, DJ44, DI50, DI25, DG20) from value set `http://ehealth.sundhed.dk/vs/conditions`
+- `clinician-client/src/main/java/.../clinician/controller/CreateEpisodeController.java`: `GET /episodes/new?patient=` renders the form; `POST /episodes` builds a patient-scoped context, calls `createEpisode`, and redirects
+- `clinician-client/src/main/java/.../clinician/fhir/EpisodeOfCareAPI.java`: `createEpisode(transactionBundle, context)` wraps the bundle in a `Parameters.episodeOfCareAndProvenances` parameter and calls `POST /$create-episode-of-care`
+- `clinician-client/src/main/java/.../clinician/mappers/EpisodeOfCareMapper.java`: `toCreateEpisodeTransaction(patientId, conditionOption, context)` builds the transaction bundle
+- `clinician-client/src/main/java/.../clinician/models/ConditionCodeOption.java`: hardcoded list of five SKS codes (DE11, DJ44, DI50, DI25, DG20) from value set `http://ehealth.sundhed.dk/vs/conditions`
 - `clinician-client/src/main/resources/templates/create-episode.html`: diagnosis picker form
 
 ## FHIR operations

@@ -31,11 +31,11 @@ sequenceDiagram
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/SelectContextController.java`: `GET /select-context` renders the picker; `POST /select-context` writes `selected-context` to session
-- `clinician-client/src/main/java/.../clinician/infrastructure/LoginSuccessHandler.java`: fetches available care teams on login success and stores them as `availableContexts`
-- `clinician-client/src/main/java/.../clinician/infrastructure/EHealthContextArgumentResolver.java`: builds `EHealthContext` from the session-stored `CareTeamOption` for every controller method
-- `clinician-client/src/main/java/.../clinician/infrastructure/SelectedContextInterceptor.java`: redirects unauthenticated or no-selection requests to `/select-context`
-- `common/src/main/java/.../common/infrastructure/connect/EHealthContextOptionsClient.java`: Spring HTTP interface that calls the Keycloak SPI endpoint
+- `clinician-client/src/main/java/.../clinician/controller/SelectContextController.java`: `GET /select-context` renders the picker; `POST /select-context` writes `selected-context` to session
+- `clinician-client/src/main/java/.../clinician/security/LoginSuccessHandler.java`: fetches available care teams on login success and stores them as `availableContexts`
+- `clinician-client/src/main/java/.../clinician/config/spring/EHealthContextArgumentResolver.java`: builds `EHealthContext` from the session-stored `CareTeamOption` for every controller method
+- `clinician-client/src/main/java/.../clinician/config/spring/SelectedContextInterceptor.java`: redirects unauthenticated or no-selection requests to `/select-context`
+- `common/src/main/java/.../common/web/EHealthContextOptionsClient.java`: Spring HTTP interface that calls the Keycloak SPI endpoint
 - `clinician-client/src/main/resources/templates/select-context.html`: radio-button list of CareTeams
 
 ## FHIR operations

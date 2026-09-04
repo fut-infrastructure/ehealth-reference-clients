@@ -45,13 +45,13 @@ sequenceDiagram
 
 ## Key files
 
-- `clinician-client/src/main/java/.../clinician/app/CarePlansController.java`: `POST /episodes/{eoc}/care-plans/{id}/activate` and `POST /episodes/{eoc}/care-plans/{id}/status`
-- `clinician-client/src/main/java/.../clinician/app/EpisodeStatusController.java`: `POST /episodes/{id}/status`; calls `ConsentAPI.ensureEnrollmentConsent` before activating
-- `clinician-client/src/main/java/.../clinician/api/CarePlanAPI.java`: `activateCarePlan(id, eoc, context)` (fetch + build transaction + execute); `changeCarePlanStatus(id, eoc, target, context)` (read → mutate status → PUT)
-- `clinician-client/src/main/java/.../clinician/api/EpisodeOfCareAPI.java`: `changeEpisodeStatus(id, target, context)` issues a JSON Patch `replace /status`
-- `clinician-client/src/main/java/.../clinician/api/ConsentAPI.java`: `ensureEnrollmentConsent(...)` checks for an existing `PITEOC` consent and creates one if absent
-- `clinician-client/src/main/java/.../clinician/app/util/CarePlanActivationUtil.java`: `buildActivationBundle(carePlan, serviceRequests)` builds the transaction bundle that flips the plan and each activity to its type-specific active state
-- `common/src/main/java/.../common/infrastructure/fhir/JsonPatch.java`: RFC 6902 JSON Patch builder used by `changeEpisodeStatus`
+- `clinician-client/src/main/java/.../clinician/controller/CarePlansController.java`: `POST /episodes/{eoc}/care-plans/{id}/activate` and `POST /episodes/{eoc}/care-plans/{id}/status`
+- `clinician-client/src/main/java/.../clinician/controller/EpisodeStatusController.java`: `POST /episodes/{id}/status`; calls `ConsentAPI.ensureEnrollmentConsent` before activating
+- `clinician-client/src/main/java/.../clinician/fhir/CarePlanAPI.java`: `activateCarePlan(id, eoc, context)` (fetch + build transaction + execute); `changeCarePlanStatus(id, eoc, target, context)` (read → mutate status → PUT)
+- `clinician-client/src/main/java/.../clinician/fhir/EpisodeOfCareAPI.java`: `changeEpisodeStatus(id, target, context)` issues a JSON Patch `replace /status`
+- `clinician-client/src/main/java/.../clinician/fhir/ConsentAPI.java`: `ensureEnrollmentConsent(...)` checks for an existing `PITEOC` consent and creates one if absent
+- `clinician-client/src/main/java/.../clinician/fhir/CarePlanActivationUtil.java`: `buildActivationBundle(carePlan, serviceRequests)` builds the transaction bundle that flips the plan and each activity to its type-specific active state
+- `common/src/main/java/.../common/fhir/JsonPatch.java`: RFC 6902 JSON Patch builder used by `changeEpisodeStatus`
 - `clinician-client/src/main/resources/templates/careplan-detail.html`: Activate button (shown when `canActivate`) and status dropdown (shown when `allowedTransitions` is non-empty)
 - `clinician-client/src/main/resources/templates/episode-detail.html`: inline episode status form
 

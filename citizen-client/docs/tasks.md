@@ -38,12 +38,12 @@ sequenceDiagram
 
 ## Key files
 
-- `citizen-client/src/main/java/.../citizen/app/CitizenTasksController.java`: `GET /tasks` collects
+- `citizen-client/src/main/java/.../citizen/controller/CitizenTasksController.java`: `GET /tasks` collects
   tasks across all active episodes; `POST /tasks/{id}/complete` marks one done
-- `citizen-client/src/main/java/.../citizen/api/CitizenTaskAPI.java`:
+- `citizen-client/src/main/java/.../citizen/fhir/CitizenTaskAPI.java`:
   `findTasksByEpisode(episodeOfCareId, context)`; `completeTask(taskId, context)` issues a JSON
   Patch `replace /status completed`
-- `citizen-client/src/main/java/.../citizen/api/CitizenEpisodeOfCareAPI.java`:
+- `citizen-client/src/main/java/.../citizen/fhir/CitizenEpisodeOfCareAPI.java`:
   `listMyActiveEpisodes(context)` supplies the episodes to collect tasks across
 - `citizen-client/src/main/resources/templates/tasks.html`: task list with inline complete forms
 

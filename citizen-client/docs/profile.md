@@ -28,11 +28,11 @@ sequenceDiagram
 
 ## Key files
 
-- `citizen-client/src/main/java/.../citizen/app/MeController.java`: `GET /me`; calls `readSelf`, `listMyActiveEpisodes`, and `findMyCarePlans`; projects the `Patient` through `CitizenView`
-- `citizen-client/src/main/java/.../citizen/api/CitizenPatientAPI.java`: `readSelf(context)` reads `Patient/{id}` on `FhirServer.PATIENT` using the patient id from `EHealthContext`
-- `citizen-client/src/main/java/.../citizen/api/CitizenEpisodeOfCareAPI.java`: `listMyActiveEpisodes(context)` searches `EpisodeOfCare?patient=&status=active` on `FhirServer.CARE_PLAN`
-- `citizen-client/src/main/java/.../citizen/api/CitizenCarePlanAPI.java`: `findMyCarePlans(context)` searches `CarePlan?patient=` on `FhirServer.CARE_PLAN`
-- `citizen-client/src/main/java/.../citizen/infrastructure/CitizenEHealthContextArgumentResolver.java`: injects `EHealthContext` with `patientId` from the OIDC `user_id` claim
+- `citizen-client/src/main/java/.../citizen/controller/MeController.java`: `GET /me`; calls `readSelf`, `listMyActiveEpisodes`, and `findMyCarePlans`; projects the `Patient` through `CitizenView`
+- `citizen-client/src/main/java/.../citizen/fhir/CitizenPatientAPI.java`: `readSelf(context)` reads `Patient/{id}` on `FhirServer.PATIENT` using the patient id from `EHealthContext`
+- `citizen-client/src/main/java/.../citizen/fhir/CitizenEpisodeOfCareAPI.java`: `listMyActiveEpisodes(context)` searches `EpisodeOfCare?patient=&status=active` on `FhirServer.CARE_PLAN`
+- `citizen-client/src/main/java/.../citizen/fhir/CitizenCarePlanAPI.java`: `findMyCarePlans(context)` searches `CarePlan?patient=` on `FhirServer.CARE_PLAN`
+- `citizen-client/src/main/java/.../citizen/config/spring/CitizenEHealthContextArgumentResolver.java`: injects `EHealthContext` with `patientId` from the OIDC `user_id` claim
 - `citizen-client/src/main/resources/templates/me.html`: demographic card, episode list, care-plan list
 
 ## FHIR operations
