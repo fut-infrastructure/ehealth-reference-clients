@@ -67,6 +67,27 @@ class TaskViewTest {
         assertThat(view.measurement()).isNull();
     }
 
+    @Test
+    void resolvesCarePlanIdFromTheReferenceCareplanExtension() {
+        Task task = assessmentTask("74364", "Observation/900");
+        task.addExtension(
+                "http://ehealth.sundhed.dk/fhir/StructureDefinition/ehealth-reference-careplan",
+                new Reference("https://careplan.example/fhir/CarePlan/635491"));
+
+        TaskView view = TaskView.from(List.of(task), resolver).getFirst();
+
+        assertThat(view.carePlanId()).isEqualTo("635491");
+    }
+
+    @Test
+    void leavesCarePlanIdNullWhenTheExtensionIsAbsent() {
+        Task task = assessmentTask("74364", "Observation/900");
+
+        TaskView view = TaskView.from(List.of(task), resolver).getFirst();
+
+        assertThat(view.carePlanId()).isNull();
+    }
+
     private static Task assessmentTask(String taskId, String focusReference) {
         Task task = new Task();
         task.setId("Task/" + taskId);

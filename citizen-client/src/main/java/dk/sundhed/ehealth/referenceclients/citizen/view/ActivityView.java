@@ -23,6 +23,9 @@ import java.time.format.DateTimeFormatter;
  * @param episodeRef              fully-qualified EpisodeOfCare URL extracted from the owning CarePlan;
  *                                passed to the submit-measurement page so the measurement token can be
  *                                scoped to the episode
+ * @param occurrencesRequested    expected number of measurements for this slot; null when the server
+ *                                didn't report a target (e.g. {@code Adhoc}/{@code Unresolved} rows)
+ * @param totalSubmitted          measurements already submitted for this slot; null when none reported
  */
 public record ActivityView(
         String title,
@@ -32,7 +35,9 @@ public record ActivityView(
         String carePlanId,
         @Nullable String serviceRequestVersionId,
         @Nullable String serviceRequestRef,
-        @Nullable String episodeRef) {
+        @Nullable String episodeRef,
+        @Nullable Integer occurrencesRequested,
+        @Nullable Integer totalSubmitted) {
 
     /**
      * ISO local date-time expected by {@code SubmitMeasurementController} on the submit link.
@@ -52,5 +57,27 @@ public record ActivityView(
      */
     public String slotEndParam() {
         return scheduledEnd == null ? null : scheduledEnd.format(SLOT_PARAM_FORMAT);
+    }
+
+    /**
+     * True once at least as many measurements were submitted as the slot expects.
+     */
+    public boolean completed() {
+        return occurrencesRequested != null && totalSubmitted != null
+                && totalSubmitted >= occurrencesRequested;
+    }
+
+    /**
+     * "Completed", or a "{@code submitted}/{@code requested}" count while still open; {@code null}
+     * when the server reported no target count to show progress against.
+     */
+    public String progressLabel() {
+        if (occurrencesRequested == null) {
+            return null;
+        }
+        if (completed()) {
+            return "Completed";
+        }
+        return (totalSubmitted != null ? totalSubmitted : 0) + "/" + occurrencesRequested;
     }
 }

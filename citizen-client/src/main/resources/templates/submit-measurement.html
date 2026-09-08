@@ -45,17 +45,16 @@
             </div>
         </form>
 
-        <form th:unless="${form.measurable()}" th:action="@{/measurements/complete}" method="post">
-            <input type="hidden" name="serviceRequestRef" th:value="${form.serviceRequestRef()}">
-            <input type="hidden" name="episodeRef" th:value="${form.episodeRef()}">
-
-            <p class="text-muted">This activity doesn't take a measurement. Mark it done instead.</p>
+        <div th:unless="${form.measurable()}">
+            <div class="alert alert-error">
+                This is a non-measurement ServiceRequest, which is not yet supported in the
+                reference client.
+            </div>
 
             <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Mark done</button>
-                <a th:href="@{/}" class="btn btn-secondary">Cancel</a>
+                <a th:href="@{/}" class="btn btn-secondary">Go back</a>
             </div>
-        </form>
+        </div>
     </div>
 </div>
 </body>

@@ -30,9 +30,9 @@ import java.util.UUID;
  * server. On success the citizen is redirected to the home page.
  *
  * <p>Not every activity is measurable ({@link ObservationCodes}) - e.g. a plain exercise like "do
- * 10 pushups" has no code the platform expects an Observation for. {@code showForm} flags this via
- * {@link SubmitMeasurementFormView#measurable()}; the template swaps the value/unit inputs for a
- * "Mark done" button posting to {@code /measurements/complete} instead.
+ * 10 pushups", or a questionnaire (submitted as a {@code QuestionnaireResponse}, not yet supported
+ * here). {@code showForm} flags this via {@link SubmitMeasurementFormView#measurable()}; the
+ * template shows a not-yet-supported notice instead of the value/unit inputs.
  */
 @Controller
 @RequestMapping("/measurements")
@@ -75,20 +75,6 @@ public class SubmitMeasurementController {
         model.addAttribute("form", toFormView(serviceRequest, activityDefinition, episodeRefParam, timingTypeParam, srVersionIdParam, slotStartParam, slotEndParam));
 
         return "submit-measurement";
-    }
-
-    /**
-     * Completes a non-measurable activity directly, with no Observation. Only reachable from the
-     * "Mark done" button the form renders when {@link SubmitMeasurementFormView#measurable()} is
-     * false; a measurable activity always goes through {@link #submit} instead.
-     */
-    @PostMapping("/complete")
-    public String complete(
-            @RequestParam("serviceRequestRef") String serviceRequestRef,
-            @RequestParam(name = "episodeRef", required = false) String episodeRef,
-            EHealthContext context) {
-        measurementAPI.completeServiceRequest(serviceRequestRef, episodeRef, context);
-        return "redirect:/";
     }
 
     @PostMapping("/new")

@@ -1,17 +1,16 @@
 package dk.sundhed.ehealth.referenceclients.clinician.controller;
 
 import ca.uhn.fhir.rest.server.exceptions.ForbiddenOperationException;
+import dk.sundhed.ehealth.referenceclients.clinician.fhir.CarePlanAPI;
 import dk.sundhed.ehealth.referenceclients.clinician.fhir.MeasurementAPI;
 import dk.sundhed.ehealth.referenceclients.clinician.fhir.TaskAPI;
 import dk.sundhed.ehealth.referenceclients.clinician.view.MeasurementView;
+import dk.sundhed.ehealth.referenceclients.clinician.view.TaskGroupView;
 import dk.sundhed.ehealth.referenceclients.clinician.view.TaskView;
 import dk.sundhed.ehealth.referenceclients.common.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.fhir.FhirServer;
 import dk.sundhed.ehealth.referenceclients.common.security.EHealthContext;
-import org.hl7.fhir.r4.model.Bundle;
-import org.hl7.fhir.r4.model.EpisodeOfCare;
-import org.hl7.fhir.r4.model.Patient;
-import org.hl7.fhir.r4.model.Task;
+import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +20,7 @@ import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Renders and manages the task list for a single {@code EpisodeOfCare}.
@@ -41,11 +41,14 @@ public class TasksController {
 
     private final TaskAPI taskAPI;
     private final MeasurementAPI measurementAPI;
+    private final CarePlanAPI carePlanAPI;
     private final BaseUrlResolver baseUrlResolver;
 
-    public TasksController(TaskAPI taskAPI, MeasurementAPI measurementAPI, BaseUrlResolver baseUrlResolver) {
+    public TasksController(
+            TaskAPI taskAPI, MeasurementAPI measurementAPI, CarePlanAPI carePlanAPI, BaseUrlResolver baseUrlResolver) {
         this.taskAPI = taskAPI;
         this.measurementAPI = measurementAPI;
+        this.carePlanAPI = carePlanAPI;
         this.baseUrlResolver = baseUrlResolver;
     }
 
@@ -53,6 +56,7 @@ public class TasksController {
     public String tasks(
             @PathVariable("id") String episodeId,
             @RequestParam(value = "patient", required = false) String patientId,
+            @RequestParam(value = "hideCompleted", required = false) Boolean hideCompleted,
             EHealthContext context,
             Model model) {
         String qualifiedEpisodeOfCare = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
@@ -62,11 +66,38 @@ public class TasksController {
         List<Task> tasks = taskAPI.findTasksByEpisode(qualifiedEpisodeOfCare, taskContext);
         Map<String, MeasurementView> byObservation =
                 measurementsByObservation(qualifiedEpisodeOfCare, qualifiedPatient, context);
+        List<TaskView> taskViews = TaskView.from(tasks, baseUrlResolver, byObservation);
+        if (Boolean.TRUE.equals(hideCompleted)) {
+            taskViews = taskViews.stream().filter(task -> !"completed".equals(task.status())).toList();
+        }
+        Map<String, String> carePlanTitleById = carePlanTitleById(qualifiedEpisodeOfCare, context);
 
         model.addAttribute("episodeId", episodeId);
         model.addAttribute("patientId", patientId);
-        model.addAttribute("tasks", TaskView.from(tasks, baseUrlResolver, byObservation));
+        model.addAttribute("hideCompleted", Boolean.TRUE.equals(hideCompleted));
+        model.addAttribute("taskGroups", TaskGroupView.groupByCarePlan(taskViews, carePlanTitleById));
         return "tasks";
+    }
+
+    @PostMapping("/{id}/tasks/{taskId}/status")
+    public String changeStatus(
+            @PathVariable("id") String episodeId,
+            @PathVariable String taskId,
+            @RequestParam("target") String target,
+            @RequestParam(value = "patient", required = false) String patientId,
+            @RequestParam(value = "hideCompleted", required = false) Boolean hideCompleted,
+            EHealthContext context) {
+        String qualifiedEpisodeOfCare = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
+        String qualifiedTask = baseUrlResolver.createId(FhirServer.TASK, Task.class, taskId);
+        Task.TaskStatus status = Task.TaskStatus.fromCode(target);
+        if (status == null) {
+            throw new IllegalArgumentException("Unsupported Task status: " + target);
+        }
+        EHealthContext taskContext =
+                context.withPatient(qualifiedPatient(patientId)).withEpisodeOfCare(qualifiedEpisodeOfCare);
+        taskAPI.changeTaskStatus(qualifiedTask, status, taskContext);
+
+        return "redirect:/episodes/" + episodeId + "/tasks" + queryString(patientId, hideCompleted);
     }
 
     /**
@@ -87,25 +118,32 @@ public class TasksController {
         }
     }
 
-    @PostMapping("/{id}/tasks/{taskId}/status")
-    public String changeStatus(
-            @PathVariable("id") String episodeId,
-            @PathVariable String taskId,
-            @RequestParam("target") String target,
-            @RequestParam(value = "patient", required = false) String patientId,
-            EHealthContext context) {
-        String qualifiedEpisodeOfCare = baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeId);
-        String qualifiedTask = baseUrlResolver.createId(FhirServer.TASK, Task.class, taskId);
-        Task.TaskStatus status = Task.TaskStatus.fromCode(target);
-        if (status == null) {
-            throw new IllegalArgumentException("Unsupported Task status: " + target);
-        }
-        EHealthContext taskContext =
-                context.withPatient(qualifiedPatient(patientId)).withEpisodeOfCare(qualifiedEpisodeOfCare);
-        taskAPI.changeTaskStatus(qualifiedTask, status, taskContext);
+    /**
+     * Care plan title by bare id, for the task groups' headers, falling back to the bare id for a
+     * plan with no title (see {@link TaskGroupView#carePlanTitle()}).
+     */
+    private Map<String, String> carePlanTitleById(String qualifiedEpisodeOfCare, EHealthContext context) {
+        List<CarePlan> carePlans = carePlanAPI.findCarePlansByEpisode(qualifiedEpisodeOfCare, context);
+        return carePlans.stream().collect(Collectors.toMap(
+                carePlan -> carePlan.getIdElement().getIdPart(),
+                carePlan -> carePlan.hasTitle() ? carePlan.getTitle() : carePlan.getIdElement().getIdPart(),
+                (existing, replacement) -> existing));
+    }
 
-        String tasksPage = "redirect:/episodes/" + episodeId + "/tasks";
-        return (patientId == null || patientId.isBlank()) ? tasksPage : tasksPage + "?patient=" + patientId;
+    /**
+     * Builds the query string that carries the task list's view state (which patient, whether
+     * completed tasks are hidden) through a redirect back to it, so a status change doesn't reset
+     * either.
+     */
+    private static String queryString(String patientId, Boolean hideCompleted) {
+        StringBuilder query = new StringBuilder();
+        if (patientId != null && !patientId.isBlank()) {
+            query.append(query.isEmpty() ? '?' : '&').append("patient=").append(patientId);
+        }
+        if (Boolean.TRUE.equals(hideCompleted)) {
+            query.append(query.isEmpty() ? '?' : '&').append("hideCompleted=true");
+        }
+        return query.toString();
     }
 
     /**

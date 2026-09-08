@@ -5,6 +5,7 @@ import org.hl7.fhir.r4.model.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Builds a FHIR transaction {@link Bundle} that flips a {@link CarePlan} and all its referenced
@@ -29,11 +30,20 @@ public final class CarePlanActivationUtil {
     /**
      * Builds a transaction Bundle that activates the given care plan and activities.
      *
-     * @param carePlan   the draft care plan to activate
-     * @param activities the activities (Task / Appointment / ServiceRequest) to activate alongside
+     * @param carePlan                          the draft care plan to activate
+     * @param activities                        the activities (Task / Appointment / ServiceRequest)
+     *                                          to activate alongside
+     * @param activityDefinitionsByCanonicalUrl the {@link ActivityDefinition}s each
+     *                                          {@link ServiceRequest} instantiates, keyed by
+     *                                          versionless canonical URL - supplies a recurring
+     *                                          schedule when {@code $apply} left the ServiceRequest's
+     *                                          occurrence empty (see {@link #resolveOccurrence})
      * @return a {@link Bundle.BundleType#TRANSACTION} bundle ready to {@code execute()}
      */
-    public static Bundle buildActivationBundle(CarePlan carePlan, List<? extends Resource> activities) {
+    public static Bundle buildActivationBundle(
+            CarePlan carePlan,
+            List<? extends Resource> activities,
+            Map<String, ActivityDefinition> activityDefinitionsByCanonicalUrl) {
         Date now = new Date();
 
         carePlan.setStatus(CarePlan.CarePlanStatus.ACTIVE);
@@ -43,7 +53,7 @@ public final class CarePlanActivationUtil {
 
         List<Resource> activatedActivities = new ArrayList<>();
         for (Resource activity : activities) {
-            activateActivity(activity, now);
+            activateActivity(activity, now, activityDefinitionsByCanonicalUrl);
             activatedActivities.add(activity);
         }
 
@@ -55,12 +65,14 @@ public final class CarePlanActivationUtil {
         return bundle;
     }
 
-    private static void activateActivity(Resource activity, Date now) {
+    private static void activateActivity(
+            Resource activity, Date now, Map<String, ActivityDefinition> activityDefinitionsByCanonicalUrl) {
         switch (activity) {
             case ServiceRequest serviceRequest -> {
                 serviceRequest.setStatus(ServiceRequest.ServiceRequestStatus.ACTIVE);
                 if (!serviceRequest.hasOccurrence()) {
-                    serviceRequest.setOccurrence(new Period().setStart(now));
+                    serviceRequest.setOccurrence(
+                            resolveOccurrence(serviceRequest, activityDefinitionsByCanonicalUrl, now));
                 }
             }
             case Task task -> task.setStatus(Task.TaskStatus.READY);
@@ -70,6 +82,38 @@ public final class CarePlanActivationUtil {
                 // if the type is unexpected, which is the right failure mode for a reference client.
             }
         }
+    }
+
+    /**
+     * A recurring {@link Timing} copied from the ServiceRequest's ActivityDefinition when it has
+     * one, so a genuinely repeating activity (e.g. "daily") doesn't collapse to a single one-shot
+     * occurrence just because {@code $apply} left it unset. Falls back to a one-shot {@link Period}
+     * starting {@code now} - the only option left once there's no ActivityDefinition to ask, or it
+     * doesn't specify a timing itself.
+     */
+    private static Type resolveOccurrence(
+            ServiceRequest serviceRequest,
+            Map<String, ActivityDefinition> activityDefinitionsByCanonicalUrl,
+            Date now) {
+        ActivityDefinition activityDefinition =
+                activityDefinitionOf(serviceRequest, activityDefinitionsByCanonicalUrl);
+        if (activityDefinition != null && activityDefinition.hasTimingTiming()) {
+            return activityDefinition.getTimingTiming().copy();
+        }
+        return new Period().setStart(now);
+    }
+
+    private static ActivityDefinition activityDefinitionOf(
+            ServiceRequest serviceRequest, Map<String, ActivityDefinition> activityDefinitionsByCanonicalUrl) {
+        if (serviceRequest.getInstantiatesCanonical().isEmpty()) {
+            return null;
+        }
+        String canonical = serviceRequest.getInstantiatesCanonical().getFirst().getValue();
+        if (canonical == null) {
+            return null;
+        }
+        String key = new IdType(canonical).toVersionless().getValue();
+        return activityDefinitionsByCanonicalUrl.get(key);
     }
 
     private static Bundle.BundleEntryComponent putEntry(Resource resource) {

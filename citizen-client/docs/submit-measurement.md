@@ -8,33 +8,33 @@ weekly view, or for an unscheduled activity from the "Without time" section on t
 - Citizen clicks "Submit" (scheduled) on an activity card.
 - `GET /measurements/new?serviceRequest=...` reads the underlying `ServiceRequest` and its
   `ActivityDefinition` to pre-fill the measurement code and label, and renders the submission form.
-- If the resolved code isn't in the `observation-codes` value set (see `ObservationCodes`) - e.g. a
-  plain exercise like "do 10 pushups" - the page renders a "Mark done" button instead of the
-  value/unit inputs.
-- Citizen enters a value (and optional free-text unit) and submits, or clicks "Mark done" for a
-  non-measurable activity.
+- If the resolved code isn't in the `observation-codes` value set (see `ObservationCodes`), the page
+  shows a not-yet-supported notice instead of the value/unit inputs, with no submission action - this
+  covers both a plain non-measurable exercise like "do 10 pushups" and a questionnaire activity (code
+  `273586006`/"Master Questionnaire" per the FUT IG's
+  `activitydefinition-code-to-measurement-resource-type` ConceptMap, which expects a
+  `QuestionnaireResponse` this client doesn't yet build).
+- Citizen enters a value (and optional free-text unit) and submits, or goes back for a
+  non-measurable activity - there is no completion path for those yet.
 - `POST /measurements/new` builds an `Observation`, wraps it in a transaction `Bundle`, and submits
-  it to the measurement server. `POST /measurements/complete` instead reads the `ServiceRequest` and
-  PUTs it back with `status=completed`, no Observation involved.
+  it to the measurement server.
 - Citizen is redirected to the home page.
 
 ## Key files
 
 - `citizen-client/src/main/java/.../citizen/controller/SubmitMeasurementController.java`: `GET
   /measurements/new` resolves the `ServiceRequest`/`ActivityDefinition` into a form view; `POST
-  /measurements/new` builds the `Observation` and submits it; `POST /measurements/complete` marks a
-  non-measurable activity done directly
+  /measurements/new` builds the `Observation` and submits it
 - `citizen-client/src/main/java/.../citizen/fhir/CitizenMeasurementAPI.java`:
   `readServiceRequest(url, context)` (careplan server), `readActivityDefinition(url, context)`
-  (plan server), `submitMeasurement(bundle, context)` (measurement server),
-  `completeServiceRequest(url, episodeOfCareId, context)` (careplan server, read + PUT)
+  (plan server), `submitMeasurement(bundle, context)` (measurement server)
 - `citizen-client/src/main/java/.../citizen/view/SubmitMeasurementFormView.java`: the form-backing
   record (code, patient/episode refs, timing info, the citizen's typed value and unit, and
   `measurable`)
 - `citizen-client/src/main/java/.../citizen/models/ObservationCodes.java`: static mirror of the
   `observation-codes` value set, used to decide `measurable`
 - `citizen-client/src/main/resources/templates/submit-measurement.html`: the submission form, or a
-  "Mark done" button when the activity isn't measurable
+  not-yet-supported notice when the activity isn't measurable
 
 ## Sequence
 
@@ -46,23 +46,22 @@ sequenceDiagram
     participant careplan as fut-careplan
     participant plan as fut-plan
     participant measurement as fut-measurement
-
-    Browser->>SubmitMeasurementController: GET /measurements/new?serviceRequest=...
-    SubmitMeasurementController->>CitizenMeasurementAPI: readServiceRequest(url, context)
-    CitizenMeasurementAPI->>careplan: GET ServiceRequest/{id}
-    careplan-->>CitizenMeasurementAPI: ServiceRequest
-    CitizenMeasurementAPI-->>SubmitMeasurementController: ServiceRequest
-    SubmitMeasurementController->>CitizenMeasurementAPI: readActivityDefinition(url, context)
-    CitizenMeasurementAPI->>plan: GET ActivityDefinition/{id}
-    plan-->>CitizenMeasurementAPI: ActivityDefinition
-    CitizenMeasurementAPI-->>SubmitMeasurementController: ActivityDefinition
-    SubmitMeasurementController-->>Browser: submission form, pre-filled
-    Browser->>SubmitMeasurementController: POST /measurements/new (value, unit)
-    SubmitMeasurementController->>CitizenMeasurementAPI: submitMeasurement(bundle, context)
-    CitizenMeasurementAPI->>measurement: POST /$submit-measurement
-    measurement-->>CitizenMeasurementAPI: 200 OK
-    CitizenMeasurementAPI-->>SubmitMeasurementController: 200 OK
-    SubmitMeasurementController-->>Browser: redirect to /
+    Browser ->> SubmitMeasurementController: GET /measurements/new?serviceRequest=...
+    SubmitMeasurementController ->> CitizenMeasurementAPI: readServiceRequest(url, context)
+    CitizenMeasurementAPI ->> careplan: GET ServiceRequest/{id}
+    careplan -->> CitizenMeasurementAPI: ServiceRequest
+    CitizenMeasurementAPI -->> SubmitMeasurementController: ServiceRequest
+    SubmitMeasurementController ->> CitizenMeasurementAPI: readActivityDefinition(url, context)
+    CitizenMeasurementAPI ->> plan: GET ActivityDefinition/{id}
+    plan -->> CitizenMeasurementAPI: ActivityDefinition
+    CitizenMeasurementAPI -->> SubmitMeasurementController: ActivityDefinition
+    SubmitMeasurementController -->> Browser: submission form, pre-filled
+    Browser ->> SubmitMeasurementController: POST /measurements/new (value, unit)
+    SubmitMeasurementController ->> CitizenMeasurementAPI: submitMeasurement(bundle, context)
+    CitizenMeasurementAPI ->> measurement: POST /$submit-measurement
+    measurement -->> CitizenMeasurementAPI: 200 OK
+    CitizenMeasurementAPI -->> SubmitMeasurementController: 200 OK
+    SubmitMeasurementController -->> Browser: redirect to /
 ```
 
 ## FHIR operations
@@ -72,9 +71,6 @@ sequenceDiagram
   ServiceRequest was instantiated from
 - `POST /$submit-measurement` on `FhirServer.MEASUREMENT`: body is `Parameters` wrapping a
   transaction `Bundle` containing one `ehealth-observation`
-- `GET ServiceRequest/{id}` + `PUT ServiceRequest/{id}` on `FhirServer.CARE_PLAN` (episode-scoped
-  token): the "Mark done" path. `ServiceRequest` has no PATCH operation registered on this server, so
-  this reads the resource and PUTs it back with `status=completed`
 
 ## Notes
 
@@ -97,13 +93,8 @@ sequenceDiagram
   the `ehealth-observation` profile permits either.
 - A blank or non-numeric value is silently left unset on the `Observation`; the server rejects the
   submission rather than the client validating it client-side.
-- `completed` is a terminal `ServiceRequest` status - confirmed against a live environment that a
-  PUT moving it back to `active` is rejected. There's no undo once a citizen marks an activity done.
-- The "Mark done" write path was verified against a live environment under a **practitioner** token
-  (same read-PUT mechanism, same server). It has not yet been exercised under an actual citizen
-  (`PATIENT`-type) token - the FUT authorization rules for who may write `ServiceRequest` could differ
-  by token type, the way search scoping already does elsewhere in this app. Test it end-to-end via a
-  real citizen login before relying on it.
+- A questionnaire activity is submittable in principle: the `ehealth-questionnaireresponse` profile
+  submits the same way as an Observation via `$submit-measurement`, it just isn't built here yet.
 - `ObservationCodes` is a static snapshot of the `observation-codes` value set (IG version
   `2020-03-10T13:13:59`, mirrored from `ValueSet-ehealth-observation-codes.json`). If the platform's
   value set changes, this list goes stale silently - there's no live `$validate-code` call backing it.

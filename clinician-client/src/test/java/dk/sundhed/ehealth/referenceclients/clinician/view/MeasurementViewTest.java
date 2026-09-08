@@ -4,6 +4,8 @@ import org.hl7.fhir.r4.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -21,7 +23,9 @@ class MeasurementViewTest {
         List<MeasurementView> views = MeasurementView.from(outer);
 
         assertThat(views).extracting(MeasurementView::observationId).containsExactly("101", "100");
-        assertThat(views.getFirst().date()).isEqualTo("2026-04-16");
+        String expectedLocalDateTime = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                .format(Instant.parse("2026-04-16T10:00:00Z").atZone(ZoneId.systemDefault()));
+        assertThat(views.getFirst().date()).isEqualTo(expectedLocalDateTime);
         assertThat(views.getFirst().value()).isEqualTo("72 /min");
         assertThat(views.getFirst().status()).isEqualTo("final");
     }

@@ -55,7 +55,9 @@ class ActivityGroupFragmentTest {
                 "9",
                 "2",
                 "https://careplan.example/fhir/ServiceRequest/657450",
-                "https://careplan.example/fhir/EpisodeOfCare/5");
+                "https://careplan.example/fhir/EpisodeOfCare/5",
+                1,
+                0);
 
         String html = render(activity);
 
@@ -74,12 +76,33 @@ class ActivityGroupFragmentTest {
         ActivityView activity = new ActivityView(
                 "Puls", null, null, "Adhoc", "9", "2",
                 "https://careplan.example/fhir/ServiceRequest/657450",
-                "https://careplan.example/fhir/EpisodeOfCare/5");
+                "https://careplan.example/fhir/EpisodeOfCare/5",
+                null, null);
 
         String html = render(activity);
 
         assertThat(html).contains("timingType=Adhoc");
         assertThat(html).doesNotContain("slotStart=2026");
+    }
+
+    @Test
+    void completedActivityHidesTheSubmitLinkAndShowsAChip() {
+        ActivityView activity = new ActivityView(
+                "Puls",
+                LocalDateTime.of(2026, 4, 15, 10, 0),
+                LocalDateTime.of(2026, 4, 15, 10, 0),
+                "Resolved",
+                "9",
+                "2",
+                "https://careplan.example/fhir/ServiceRequest/657450",
+                "https://careplan.example/fhir/EpisodeOfCare/5",
+                1,
+                1);
+
+        String html = render(activity);
+
+        assertThat(html).doesNotContain("/measurements/new");
+        assertThat(html).contains("Completed");
     }
 
     private String render(ActivityView activity) {

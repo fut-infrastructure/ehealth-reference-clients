@@ -12,7 +12,6 @@
         <nav class="site-nav"
              th:if="${#authentication != null and #authentication.principal != 'anonymousUser'}">
             <a th:href="@{/}" class="nav-tab">My week</a>
-            <a th:href="@{/tasks}" class="nav-tab">Tasks</a>
             <a th:href="@{/me}" class="nav-tab">My profile</a>
         </nav>
         <div class="site-user">

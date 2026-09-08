@@ -33,6 +33,13 @@ public class WeeklyActivitiesMapper {
         // Keep only each ServiceRequest's newest version so stale buckets don't surface as activities.
         Map<String, Integer> latestVersion = latestVersions(rows);
 
+        // For a one-shot (non-repeating) ServiceRequest, the server can split one occurrence across
+        // two rows for the same instant: a still-"due" row (OccurrencesRequested) and a submitted row
+        // (TotalSubmitted). Merge counts per slot so the activity shows one progress figure instead
+        // of a stale "still due" row alongside a "submitted" one.
+        Map<SlotKey, ProgressCounts> progressBySlot = mergeProgressBySlot(rows, latestVersion);
+        Set<SlotKey> emittedSlots = new HashSet<>();
+
         LocalDate monday = weekStart.with(DayOfWeek.MONDAY);
         LocalDate sundayExclusive = monday.plusDays(7);
 
@@ -51,12 +58,16 @@ public class WeeklyActivitiesMapper {
             }
             LocalDateTime resolvedAt = toLocal(row.resolvedStart());
             if (resolvedAt == null) {
-                unscheduled.add(toView(row, null, episodes));
+                unscheduled.add(toView(row, null, episodes, progressOf(row)));
+                continue;
+            }
+            SlotKey slot = new SlotKey(row.serviceRequestRef(), row.resolvedStart().toInstant());
+            if (!emittedSlots.add(slot)) {
                 continue;
             }
             LocalDate date = resolvedAt.toLocalDate();
             if (!date.isBefore(monday) && date.isBefore(sundayExclusive)) {
-                scheduledInWeek.add(toView(row, resolvedAt, episodes));
+                scheduledInWeek.add(toView(row, resolvedAt, episodes, progressBySlot.get(slot)));
             }
         }
 
@@ -76,7 +87,8 @@ public class WeeklyActivitiesMapper {
     }
 
     private static ActivityView toView(
-            ProcedureRow row, LocalDateTime resolvedAt, Map<String, String> episodes) {
+            ProcedureRow row, LocalDateTime resolvedAt, Map<String, String> episodes,
+            ProgressCounts progress) {
         String title = row.activity() != null && !row.activity().isBlank()
                 ? row.activity()
                 : "Activity";
@@ -85,7 +97,8 @@ public class WeeklyActivitiesMapper {
         LocalDateTime resolvedEnd = toLocal(row.resolvedEnd());
         return new ActivityView(
                 title, resolvedAt, resolvedEnd, row.timingType(), carePlanId,
-                row.serviceRequestVersionId(), row.serviceRequestRef(), episode);
+                row.serviceRequestVersionId(), row.serviceRequestRef(), episode,
+                progress.requested(), progress.submitted());
     }
 
     /**
@@ -121,6 +134,58 @@ public class WeeklyActivitiesMapper {
         Integer newest = latestVersion.get(row.serviceRequestRef());
         Integer version = versionOf(row);
         return newest != null && version != null && version < newest;
+    }
+
+    /**
+     * A ServiceRequest's resolved occurrence, identified by its instant rather than its formatted
+     * offset so two equal instants written with different UTC offsets still match.
+     */
+    private record SlotKey(String serviceRequestRef, Instant resolvedStart) {
+    }
+
+    /**
+     * How many measurements a slot expects vs. how many were submitted, either field possibly null
+     * when no row for the slot reported it.
+     */
+    private record ProgressCounts(Integer requested, Integer submitted) {
+        private static final ProgressCounts EMPTY = new ProgressCounts(null, null);
+
+        private static ProgressCounts merge(ProgressCounts a, ProgressCounts b) {
+            return new ProgressCounts(
+                    a.requested != null ? a.requested : b.requested,
+                    a.submitted != null ? a.submitted : b.submitted);
+        }
+    }
+
+    /**
+     * Merged {@link ProgressCounts} per resolved slot, combining a still-"due" row
+     * (OccurrencesRequested) with a submitted row (TotalSubmitted) for the same instant when the
+     * server split them across two rows instead of reporting both on one. Superseded versions are
+     * excluded so a stale row's counts (e.g. a pre-submission {@code submitted: 0}) can't win over
+     * the current version's just because zero isn't null.
+     */
+    private static Map<SlotKey, ProgressCounts> mergeProgressBySlot(
+            List<ProcedureRow> rows,
+            Map<String, Integer> latestVersion
+    ) {
+        Map<SlotKey, ProgressCounts> merged = new HashMap<>();
+
+        for (ProcedureRow row : rows) {
+            if (row.resolvedStart() == null || isSuperseded(row, latestVersion)) {
+                continue;
+            }
+            SlotKey slot = new SlotKey(row.serviceRequestRef(), row.resolvedStart().toInstant());
+            merged.merge(slot, progressOf(row), ProgressCounts::merge);
+        }
+
+        return merged;
+    }
+
+    private static ProgressCounts progressOf(ProcedureRow row) {
+        if (row.occurrencesRequested() == null && row.totalSubmitted() == null) {
+            return ProgressCounts.EMPTY;
+        }
+        return new ProgressCounts(row.occurrencesRequested(), row.totalSubmitted());
     }
 
     private static Integer versionOf(ProcedureRow row) {

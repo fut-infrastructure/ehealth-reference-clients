@@ -15,8 +15,8 @@ This repository shows a working, end-to-end integration with the FUT platform. I
 
 - OAuth2 login against the FUT Keycloak realms (clinician via the `ehealth` realm; citizen via NemLogin), and the context-aware token refresh FUT's FHIR APIs require, see [`docs/authentication.md`](docs/authentication.md)
 - Creating a citizen via the `$createPatient` FHIR operation (CPR lookup + enrichment from the national CPR registry)
-- Searching for citizens, managing episodes of care and care plans (create, activate, close), and assigning tasks
-- Citizen view of weekly planned activities via the `$get-patient-procedures` operation, submitting measurements, and a task list
+- Searching for citizens, managing episodes of care and care plans (create, activate, close), and reviewing/approving the tasks the platform creates on a citizen's measurement submission
+- Citizen view of weekly planned activities via the `$get-patient-procedures` operation, and submitting measurements
 
 Both apps are server-side Spring Boot (Java 21, Spring Boot 3.4.x, Thymeleaf). There is no separate SPA bundle and no Node toolchain. The FHIR client is HAPI FHIR R4.
 

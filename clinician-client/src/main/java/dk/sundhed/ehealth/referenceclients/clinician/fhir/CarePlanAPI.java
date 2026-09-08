@@ -17,10 +17,8 @@ import org.hl7.fhir.r4.model.*;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Raw FHIR wrappers around the {@code CarePlan} resource on the {@link FhirServer#CARE_PLAN}
@@ -80,7 +78,7 @@ public class CarePlanAPI {
      * @param episodeOfCareId  fully-qualified EpisodeOfCare URL
      * @param context          security context
      * @return the newly-created draft {@link CarePlan}, with {@code title} backfilled if it was
-     *         missing
+     * missing
      */
     public CarePlan applyPlanDefinition(
             String planDefinitionId, String episodeOfCareId, EHealthContext context) {
@@ -300,7 +298,9 @@ public class CarePlanAPI {
      * Activates a draft {@link CarePlan} together with all its activities in one atomic
      * transaction.
      *
-     * <p>Fetches the plan plus its {@link ServiceRequest} activities, hands them to
+     * <p>Fetches the plan plus its {@link ServiceRequest} activities and the {@link
+     * ActivityDefinition} each instantiates (see {@link #findActivityDefinitionsByCanonicalUrl}, so
+     * a recurring schedule survives activation - see {@link CarePlanActivationUtil}), hands them to
      * {@link CarePlanActivationUtil} to build a transaction Bundle, and executes it.
      *
      * @param carePlanId      fully-qualified CarePlan URL
@@ -315,10 +315,47 @@ public class CarePlanAPI {
                 .orElseThrow(() -> new IllegalStateException(
                         "No CarePlan returned for id " + carePlanId));
         List<ServiceRequest> serviceRequests = BundleUtil.extract(searchBundle, ServiceRequest.class);
+        Map<String, ActivityDefinition> activityDefinitionsByCanonicalUrl =
+                findActivityDefinitionsByCanonicalUrl(serviceRequests, context);
 
-        Bundle transactionBundle =
-                CarePlanActivationUtil.buildActivationBundle(carePlan, serviceRequests);
+        Bundle transactionBundle = CarePlanActivationUtil.buildActivationBundle(
+                carePlan, serviceRequests, activityDefinitionsByCanonicalUrl);
         executeTransaction(transactionBundle, episodeOfCareId, context);
+    }
+
+    /**
+     * Bulk-reads the {@link ActivityDefinition}s the given {@link ServiceRequest}s instantiate,
+     * keyed by versionless canonical URL (the same key {@code instantiatesCanonical} resolves to
+     * once stripped of its {@code |version} suffix), so {@link CarePlanActivationUtil} can look up
+     * each ServiceRequest's intended timing without a request per activity.
+     */
+    private Map<String, ActivityDefinition> findActivityDefinitionsByCanonicalUrl(
+            List<ServiceRequest> serviceRequests, EHealthContext context) {
+        Set<String> bareIds = new HashSet<>();
+        for (ServiceRequest serviceRequest : serviceRequests) {
+            if (serviceRequest.getInstantiatesCanonical().isEmpty()) {
+                continue;
+            }
+            String canonical = serviceRequest.getInstantiatesCanonical().getFirst().getValue();
+            if (canonical != null) {
+                bareIds.add(new IdType(canonical).toVersionless().getIdPart());
+            }
+        }
+        if (bareIds.isEmpty()) {
+            return Map.of();
+        }
+
+        IGenericClient client = fhirClientFactory.createClient(FhirServer.PLAN, context);
+        Bundle bundle = client.search()
+                .forResource(ActivityDefinition.class)
+                .where(IAnyResource.RES_ID.exactly().codes(new ArrayList<>(bareIds)))
+                .returnBundle(Bundle.class)
+                .execute();
+
+        return BundleUtil.extract(bundle, ActivityDefinition.class).stream()
+                .collect(Collectors.toMap(
+                        activityDefinition -> activityDefinition.getIdElement().toVersionless().getValue(),
+                        activityDefinition -> activityDefinition));
     }
 
     /**

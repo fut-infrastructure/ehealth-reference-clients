@@ -11,11 +11,26 @@
 
     <h1>Tasks</h1>
 
-    <div class="card">
-        <p th:if="${tasks == null or tasks.isEmpty()}" class="text-muted">
-            No tasks for this episode.
-        </p>
-        <table th:unless="${tasks == null or tasks.isEmpty()}" class="patient-table">
+    <p th:if="${taskGroups == null or taskGroups.isEmpty()}" class="text-muted">
+        No tasks for this episode.
+    </p>
+
+    <p>
+        <a th:if="${!hideCompleted}"
+           th:href="@{/episodes/{id}/tasks(id=${episodeId},patient=${patientId},hideCompleted=true)}">Hide
+            completed</a>
+        <a th:if="${hideCompleted}"
+           th:href="@{/episodes/{id}/tasks(id=${episodeId},patient=${patientId})}">Show completed</a>
+    </p>
+
+    <div class="card" th:each="group : ${taskGroups}">
+        <h3>
+            <a th:if="${group.carePlanId() != null}"
+               th:href="@{/episodes/{eoc}/care-plans/{id}(eoc=${episodeId},id=${group.carePlanId()})}"
+               th:text="${group.carePlanTitle()}">Care plan</a>
+            <span th:unless="${group.carePlanId() != null}" class="text-muted">No care plan</span>
+        </h3>
+        <table class="patient-table">
             <thead>
             <tr>
                 <th>Status</th>
@@ -26,7 +41,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="task : ${tasks}">
+            <tr th:each="task : ${group.tasks()}">
                 <td><span class="chip" th:text="${task.status() != null ? task.status() : '-'}">-</span></td>
                 <td th:text="${task.description() != null ? task.description() : '-'}">-</td>
                 <td th:text="${task.measurement() != null and task.measurement().codeDisplay() != null
@@ -45,6 +60,7 @@
                     <form th:action="@{/episodes/{eoc}/tasks/{tid}/status(eoc=${episodeId},tid=${task.taskId()})}"
                           method="post" class="task-action-inline">
                         <input type="hidden" name="patient" th:value="${patientId}">
+                        <input type="hidden" name="hideCompleted" th:value="${hideCompleted}" th:if="${hideCompleted}">
                         <input type="hidden" name="target" value="completed">
                         <button type="submit" class="btn btn-primary btn-sm"
                                 th:disabled="${task.status() == 'completed'}">Approve
@@ -53,6 +69,7 @@
                     <form th:action="@{/episodes/{eoc}/tasks/{tid}/status(eoc=${episodeId},tid=${task.taskId()})}"
                           method="post" class="task-action-inline">
                         <input type="hidden" name="patient" th:value="${patientId}">
+                        <input type="hidden" name="hideCompleted" th:value="${hideCompleted}" th:if="${hideCompleted}">
                         <input type="hidden" name="target" value="cancelled">
                         <button type="submit" class="btn btn-secondary btn-sm"
                                 th:disabled="${task.status() == 'cancelled'}">Reject
@@ -61,6 +78,7 @@
                     <form th:action="@{/episodes/{eoc}/tasks/{tid}/status(eoc=${episodeId},tid=${task.taskId()})}"
                           method="post" class="episode-status-form">
                         <input type="hidden" name="patient" th:value="${patientId}">
+                        <input type="hidden" name="hideCompleted" th:value="${hideCompleted}" th:if="${hideCompleted}">
                         <select name="target">
                             <option th:each="code : ${ {'requested','in-progress','on-hold','completed','cancelled','rejected','failed'} }"
                                     th:if="${code != task.status()}"

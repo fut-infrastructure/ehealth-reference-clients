@@ -4,7 +4,9 @@ import dk.sundhed.ehealth.referenceclients.common.fhir.BaseUrlResolver;
 import dk.sundhed.ehealth.referenceclients.common.fhir.CodeableConcepts;
 import dk.sundhed.ehealth.referenceclients.common.fhir.FhirServer;
 import jakarta.annotation.Nullable;
+import org.hl7.fhir.r4.model.Extension;
 import org.hl7.fhir.r4.model.IdType;
+import org.hl7.fhir.r4.model.Reference;
 import org.hl7.fhir.r4.model.Task;
 
 import java.util.List;
@@ -26,7 +28,11 @@ public record TaskView(
         @Nullable String description,
         @Nullable String priority,
         @Nullable String focusObservationId,
-        @Nullable MeasurementView measurement) {
+        @Nullable MeasurementView measurement,
+        @Nullable String carePlanId) {
+
+    private static final String EXT_REFERENCE_CAREPLAN =
+            "http://ehealth.sundhed.dk/fhir/StructureDefinition/ehealth-reference-careplan";
 
     public static List<TaskView> from(List<Task> tasks, BaseUrlResolver baseUrlResolver) {
         return from(tasks, baseUrlResolver, Map.of());
@@ -50,7 +56,8 @@ public record TaskView(
                 task.hasDescription() ? task.getDescription() : null,
                 task.getPriority() != null ? task.getPriority().toCode() : null,
                 focusId,
-                measurement);
+                measurement,
+                carePlanId(task));
     }
 
     /**
@@ -62,6 +69,17 @@ public record TaskView(
             if ("Observation".equals(focus.getResourceType())) {
                 return focus.getIdPart();
             }
+        }
+        return null;
+    }
+
+    /**
+     * Bare CarePlan id from the {@code ehealth-reference-careplan} extension, or null when absent.
+     */
+    private static String carePlanId(Task task) {
+        Extension extension = task.getExtensionByUrl(EXT_REFERENCE_CAREPLAN);
+        if (extension != null && extension.getValue() instanceof Reference ref && ref.hasReference()) {
+            return new IdType(ref.getReference()).getIdPart();
         }
         return null;
     }

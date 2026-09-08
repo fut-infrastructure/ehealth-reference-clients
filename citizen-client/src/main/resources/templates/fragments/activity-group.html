@@ -28,8 +28,10 @@
                th:text="${activity.title()}">Title</a>
             <span class="activity-title" th:if="${activity.carePlanId() == null}"
                   th:text="${activity.title()}">Title</span>
+            <span class="chip activity-progress" th:if="${activity.progressLabel() != null}"
+                  th:text="${activity.progressLabel()}">1/1</span>
             <a class="btn btn-sm btn-primary"
-               th:if="${activity.serviceRequestRef() != null}"
+               th:if="${activity.serviceRequestRef() != null and !activity.completed()}"
                th:href="@{/measurements/new(
                        serviceRequest=${activity.serviceRequestRef()},
                        episodeRef=${activity.episodeRef()},

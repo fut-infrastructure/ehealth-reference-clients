@@ -12,10 +12,9 @@ Clinician-facing web app. Authenticates via the FUT `ehealth` Keycloak realm.
 | Episodes of care (list + detail)  | Lists the CareTeam's planned and active episodes, grouped by patient. Each episode has a detail view showing its diagnosis, managing organisation, care team, and attached care plans.                  | [episodes.md](docs/episodes.md)                                                             |
 | Create episode of care            | The clinician picks a diagnosis from a terminology-backed list. The app calls `$create-episode-of-care` on fut-careplan with a transaction bundle containing the Condition and EpisodeOfCare entries.   | [create-episode.md](docs/create-episode.md)                                                 |
 | Care plan detail + create         | Care plan detail view showing the plan's activities. New plans are created by selecting a published PlanDefinition and calling `$apply`.                                                                | [care-plans.md](docs/care-plans.md)                                                         |
-| Assign a task to the citizen      | From an active care plan, the clinician can create a task asking the citizen to submit a measurement, which then shows up on the citizen's task list.                                                   | [assign-task.md](docs/assign-task.md)                                                       |
 | Activate / close plans + episodes | Episodes and care plans can be activated and closed from their detail pages via status-update operations on the careplan server.                                                                        | [activate-close.md](docs/activate-close.md)                                                 |
 | Measurement list                  | Full measurement history for one episode of care, with a free-text search across date, measurement name, and value.                                                                                     | [measurements.md](docs/measurements.md)                                                     |
-| Task list + status update         | The clinician's view of tasks linked to one episode of care, joined to the measurement each task is about, with inline status updates.                                                                  | [tasks.md](docs/tasks.md)                                                                   |
+| Task list + status update         | The clinician's view of tasks linked to one episode of care, grouped by care plan, joined to the measurement each task is about, with inline status updates and a hide/show-completed toggle.           | [tasks.md](docs/tasks.md)                                                                   |
 
 ## FHIR servers used
 
@@ -24,4 +23,4 @@ Clinician-facing web app. Authenticates via the FUT `ehealth` Keycloak realm.
 - `fut-plan` (PlanDefinitions for care plan creation)
 - `fut-organization` (organisation hierarchy, used to resolve CareTeam context)
 - `fut-terminology` (diagnosis code lookup)
-- `fut-task` (assigning tasks to citizens)
+- `fut-task` (reviewing and approving tasks the platform creates on a citizen's measurement submission)

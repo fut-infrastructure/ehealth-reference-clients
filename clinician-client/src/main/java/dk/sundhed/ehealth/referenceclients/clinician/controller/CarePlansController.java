@@ -1,7 +1,6 @@
 package dk.sundhed.ehealth.referenceclients.clinician.controller;
 
 import dk.sundhed.ehealth.referenceclients.clinician.fhir.CarePlanAPI;
-import dk.sundhed.ehealth.referenceclients.clinician.fhir.TaskAPI;
 import dk.sundhed.ehealth.referenceclients.clinician.mappers.CarePlanMapper;
 import dk.sundhed.ehealth.referenceclients.clinician.view.CarePlanDetailView;
 import dk.sundhed.ehealth.referenceclients.common.fhir.BaseUrlResolver;
@@ -29,8 +28,6 @@ import java.util.List;
  *       plan and its activities</li>
  *   <li>{@code POST /episodes/{episodeOfCareId}/care-plans/{id}/status}: sets the plan status to
  *       {@code target}</li>
- *   <li>{@code POST /episodes/{episodeOfCareId}/care-plans/{id}/tasks}: creates a citizen-owned
- *       Task for this plan</li>
  * </ul>
  */
 @Controller
@@ -38,12 +35,10 @@ import java.util.List;
 public class CarePlansController {
 
     private final CarePlanAPI carePlanAPI;
-    private final TaskAPI taskAPI;
     private final BaseUrlResolver baseUrlResolver;
 
-    public CarePlansController(CarePlanAPI carePlanAPI, TaskAPI taskAPI, BaseUrlResolver baseUrlResolver) {
+    public CarePlansController(CarePlanAPI carePlanAPI, BaseUrlResolver baseUrlResolver) {
         this.carePlanAPI = carePlanAPI;
-        this.taskAPI = taskAPI;
         this.baseUrlResolver = baseUrlResolver;
     }
 
@@ -100,38 +95,6 @@ public class CarePlansController {
             throw new IllegalArgumentException("Unsupported CarePlan status: " + target);
         }
         carePlanAPI.changeCarePlanStatus(qualifiedId, qualifiedEoc, status, context);
-        return "redirect:/episodes/" + episodeOfCareId + "/care-plans/" + carePlanId;
-    }
-
-    /**
-     * Creates a citizen-owned {@link Task} for this care plan (see {@link TaskAPI#createTaskForPatient}
-     * for why this exists as an explicit clinician action rather than something $apply produces).
-     */
-    @PostMapping("/{id}/tasks")
-    public String createTask(
-            @PathVariable String episodeOfCareId,
-            @PathVariable("id") String carePlanId,
-            EHealthContext context) {
-        String qualifiedId = baseUrlResolver.createId(FhirServer.CARE_PLAN, CarePlan.class, carePlanId);
-        String qualifiedEoc =
-                baseUrlResolver.createId(FhirServer.CARE_PLAN, EpisodeOfCare.class, episodeOfCareId);
-
-        Bundle bundle = carePlanAPI.fetchCarePlanByIdWithActivities(qualifiedId, qualifiedEoc, context);
-        CarePlan carePlan = BundleUtil.extractFirst(bundle, CarePlan.class)
-                .orElseThrow(() -> new IllegalStateException(
-                        "CarePlan " + carePlanId + " not found"));
-
-        String patientId = carePlan.getSubject().getReference();
-        String description = carePlan.hasTitle() ? carePlan.getTitle() : carePlanId;
-
-        taskAPI.createTaskForPatient(
-                patientId,
-                qualifiedEoc,
-                qualifiedId,
-                context.careTeamId(),
-                description,
-                context);
-
         return "redirect:/episodes/" + episodeOfCareId + "/care-plans/" + carePlanId;
     }
 }

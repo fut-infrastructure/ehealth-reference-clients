@@ -10,7 +10,7 @@ The repository contains two Spring Boot 3.4 web applications:
   Keycloak `ehealth` realm and lets a clinician select a CareTeam profile, search for or create
   citizens, and manage episodes of care, care plans, and tasks.
 - **citizen-client** is used by patients. It authenticates against the FUT Keycloak `nemlogin`
-  realm (NemLogin) and shows a citizen their planned weekly activities, task list, and own profile.
+  realm (NemLogin) and shows a citizen their planned weekly activities and own profile.
 
 Each app is its own deployment unit, with its own `Dockerfile` and `application.yaml`. They share
 no runtime state, and neither app calls the other's API.

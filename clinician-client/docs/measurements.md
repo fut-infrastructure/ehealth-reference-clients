@@ -56,3 +56,7 @@ sequenceDiagram
   slash-separated value, not one row per component.
 - The free-text search happens client-side, after the bounded fetch. It narrows what's shown on
   screen; it doesn't reduce what the server sends.
+- `MeasurementView.date` carries the full local date and time (`yyyy-MM-dd HH:mm`), not just the
+  date - two readings taken the same day are otherwise indistinguishable in the list. Rendered as-is
+  by this page, the episode-detail measurement preview, and the "Reading" column on the task list
+  (see [`tasks.md`](tasks.md)); all three read the same field.

@@ -25,7 +25,7 @@ public record MeasurementView(
         @Nullable String value,
         @Nullable String status) {
 
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
     private static final ZoneId ZONE = ZoneId.systemDefault();
 
     /**
@@ -78,6 +78,6 @@ public record MeasurementView(
     }
 
     private static String formatDate(Date instant) {
-        return instant == null ? null : DATE_FORMAT.format(instant.toInstant().atZone(ZONE).toLocalDate());
+        return instant == null ? null : DATE_FORMAT.format(instant.toInstant().atZone(ZONE).toLocalDateTime());
     }
 }

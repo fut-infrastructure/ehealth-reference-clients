@@ -58,12 +58,6 @@
             </select>
             <button type="submit" class="btn btn-secondary">Apply</button>
         </form>
-
-        <form th:if="${carePlan.status() == 'active'}"
-              th:action="@{/episodes/{eoc}/care-plans/{id}/tasks(eoc=${episodeOfCareId},id=${carePlan.carePlanId()})}"
-              method="post">
-            <button type="submit" class="btn btn-secondary">Create task for citizen</button>
-        </form>
     </section>
 
     <section class="care-plan-activities">

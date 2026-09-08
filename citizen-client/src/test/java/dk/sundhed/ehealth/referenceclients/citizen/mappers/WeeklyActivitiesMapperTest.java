@@ -48,7 +48,39 @@ class WeeklyActivitiesMapperTest {
 
         List<ActivityView> scheduled = allScheduled(week);
         assertThat(scheduled).hasSize(1);
-        assertThat(scheduled.getFirst().serviceRequestVersionId()).isEqualTo("2");
+        ActivityView activity = scheduled.getFirst();
+        assertThat(activity.serviceRequestVersionId()).isEqualTo("2");
+        // The superseded version's submitted=0 must not win over the current version's submitted=1
+        // just because zero isn't null.
+        assertThat(activity.progressLabel()).isEqualTo("1/3");
+    }
+
+    @Test
+    void dueAndSubmittedRowsForTheSameInstantAreMergedIntoOneCompletedActivity() {
+        Date slot = localDate(2026, 4, 15, 10, 0);
+        ProcedureRow due = resolved("ServiceRequest/1", "4", slot, 1, null);
+        ProcedureRow submitted = resolved("ServiceRequest/1", "4", slot, null, 1);
+
+        WeekView week = mapper.map(WEEK_START, bundle(due, submitted));
+
+        List<ActivityView> scheduled = allScheduled(week);
+        assertThat(scheduled).hasSize(1);
+        ActivityView activity = scheduled.getFirst();
+        assertThat(activity.scheduledAt())
+                .isEqualTo(LocalDateTime.ofInstant(slot.toInstant(), ZoneId.systemDefault()));
+        assertThat(activity.completed()).isTrue();
+        assertThat(activity.progressLabel()).isEqualTo("Completed");
+    }
+
+    @Test
+    void partiallySubmittedRowShowsSubmittedOverRequestedProgress() {
+        ProcedureRow row = resolved("ServiceRequest/1", "1", localDate(2026, 4, 15, 10, 0), 3, 1);
+
+        WeekView week = mapper.map(WEEK_START, bundle(row));
+
+        ActivityView activity = allScheduled(week).getFirst();
+        assertThat(activity.completed()).isFalse();
+        assertThat(activity.progressLabel()).isEqualTo("1/3");
     }
 
     @Test
